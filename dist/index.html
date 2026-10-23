@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#111827" />
     <title>汉字图卡 AR</title>
-    <link rel="stylesheet" href="./styles.css?v=4" />
+    <link rel="stylesheet" href="./styles.css?v=5" />
     <script type="importmap">
       { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js" } }
     </script>
@@ -25,6 +25,7 @@
         <div id="cameraContainer"></div>
         <div id="scanHint" class="scan-hint"><span></span><b>请将吐鲁番图卡完整放入镜头</b></div>
         <div id="status" role="status">正在准备相机…</div>
+        <button id="handMode" class="hand-mode" type="button">左手持机 · 右手抓取</button>
         <button id="retryCamera" class="retry-camera" hidden>重新开启相机</button>
         <div id="radicalLayer" aria-label="可抓取的偏旁"></div>
         <div id="handCursor" aria-hidden="true"></div>
@@ -42,6 +43,6 @@
         <button id="againButton" class="primary">再玩一次</button>
       </section>
     </main>
-    <script type="module" src="./app.js?v=10"></script>
+    <script type="module" src="./app.js?v=11"></script>
   </body>
 </html>

@@ -21,6 +21,7 @@ const status = document.querySelector('#status');
 const retryCamera = document.querySelector('#retryCamera');
 const cursor = document.querySelector('#handCursor');
 const gestureState = document.querySelector('#gestureState');
+const handModeButton = document.querySelector('#handMode');
 
 let levelIndex = 0;
 let active = null;
@@ -36,6 +37,19 @@ let THREE;
 let fallbackStream = null;
 let handDetectionState = 'starting';
 let lastHandStatusAt = 0;
+let playingHand = localStorage.getItem('hanzi-playing-hand') === 'left' ? 'left' : 'right';
+
+function describeHandMode() {
+  return playingHand === 'right' ? '左手持机 · 右手抓取' : '右手持机 · 左手抓取';
+}
+
+function positionForPlayingHand(position) {
+  return playingHand === 'right' ? position : [100 - position[0], position[1]];
+}
+
+function refreshHandModeLabel() {
+  handModeButton.textContent = describeHandMode() + '（点此切换）';
+}
 
 function setStatus(message) { status.textContent = message; }
 
@@ -116,8 +130,9 @@ function createLevel() {
     node.type = 'button';
     node.textContent = radical;
     node.dataset.radical = radical;
-    node.style.left = `${level.positions[index][0]}%`;
-    node.style.top = `${level.positions[index][1]}%`;
+    const position = positionForPlayingHand(level.positions[index]);
+    node.style.left = `${position[0]}%`;
+    node.style.top = `${position[1]}%`;
     layer.append(node);
     radialNodes.push(node);
   });
@@ -171,7 +186,7 @@ function release() {
     active = null;
     gestureState.textContent = '捏合偏旁后，把手移到下方虚线格再松开';
     const index = radialNodes.indexOf(node);
-    const origin = currentLevel().positions[index];
+    const origin = positionForPlayingHand(currentLevel().positions[index]);
     node.style.left = `${origin[0]}%`;
     node.style.top = `${origin[1]}%`;
   }
@@ -390,6 +405,16 @@ practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
 againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; welcome.hidden = false; });
 retryCamera.addEventListener('click', startAR);
+handModeButton.addEventListener('click', () => {
+  playingHand = playingHand === 'right' ? 'left' : 'right';
+  localStorage.setItem('hanzi-playing-hand', playingHand);
+  refreshHandModeLabel();
+  if (arView.style.display === 'block') {
+    createLevel();
+    gestureState.textContent = '已切换手势方向，保持整只抓取手在中下方入镜';
+  }
+});
+refreshHandModeLabel();
 
 if (shouldAutoStart()) {
   // A short delay gives mobile Chrome/Safari time to finish the QR hand-off.

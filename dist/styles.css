@@ -20,6 +20,7 @@ h1 { font-size: clamp(34px, 9vw, 52px); line-height: 1; margin: 0 0 18px; }
 @keyframes scan { to { transform: translateY(calc(100dvh * .27)); } }
 #arView.found .scan-hint { opacity: 0; pointer-events: none; }
 #status { z-index: 8; position: absolute; top: max(20px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); max-width: 84vw; padding: 9px 14px; border-radius: 99px; background: #111827cf; color: #fff; font-size: 14px; text-align: center; }
+.hand-mode { z-index: 9; position: absolute; top: max(72px, calc(env(safe-area-inset-top) + 52px)); left: 50%; transform: translateX(-50%); padding: 8px 13px; border-radius: 99px; border: 1px solid #fcd34d88; color: #fff7cc; background: #101827ce; font-size: 13px; font-weight: 700; }
 .retry-camera { z-index: 9; position: absolute; top: max(76px, calc(env(safe-area-inset-top) + 56px)); left: 50%; transform: translateX(-50%); padding: 11px 18px; border-radius: 99px; color: #29133f; background: #fde68a; font-weight: 800; box-shadow: 0 3px 0 #b7791f; }
 #radicalLayer { z-index: 10; position: absolute; inset: 0; pointer-events: none; }
 .radical { position: absolute; width: 68px; height: 68px; transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; color: #2c1842; background: radial-gradient(circle at 35% 25%, #fff7cc, #fcd34d 55%, #f59e0b); border: 3px solid #fffbe6; box-shadow: 0 7px 0 #b45309, 0 9px 22px #000a; font-size: 39px; font-weight: 900; pointer-events: none; user-select: none; -webkit-user-select: none; transition: transform .15s, opacity .2s; }
