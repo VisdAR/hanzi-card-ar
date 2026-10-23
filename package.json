@@ -1,0 +1,11 @@
+{
+  "name": "hanzi-card-web-ar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile-target": "node scripts/compile-target.mjs"
+  },
+  "dependencies": {
+    "mind-ar": "1.2.5"
+  }
+}

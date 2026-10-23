@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#111827" />
+    <title>汉字图卡 AR</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js" } }
+    </script>
+  </head>
+  <body>
+    <main id="app">
+      <section id="welcome" class="panel welcome">
+        <p class="eyebrow">汉字图卡 · Web AR</p>
+        <h1>抓偏旁，组汉字</h1>
+        <p>对准「吐鲁番」图卡，偏旁会飘在现实画面中。用拇指和食指捏住它们，拖到下方格子里组字。</p>
+        <button id="startButton" class="primary">开始相机游戏</button>
+        <button id="practiceButton" class="secondary">先试玩（不用图卡）</button>
+        <small>仅在本页请求相机权限；请使用 Chrome 或 Safari。</small>
+      </section>
+
+      <section id="arView" aria-label="汉字图卡增强现实游戏">
+        <div id="cameraContainer"></div>
+        <div id="scanHint" class="scan-hint"><span></span><b>请将吐鲁番图卡完整放入镜头</b></div>
+        <div id="status" role="status">正在准备相机…</div>
+        <div id="radicalLayer" aria-label="可抓取的偏旁"></div>
+        <div id="handCursor" aria-hidden="true"></div>
+        <section id="lesson" class="lesson" aria-label="组字区域">
+          <div class="lesson-head"><span id="stageTitle">第 1 关 · 组出「吐」</span><span id="gestureState">轻触偏旁也能拖动</span></div>
+          <div id="slots" class="slots"></div>
+        </section>
+        <button id="exitButton" class="exit" aria-label="退出游戏">×</button>
+      </section>
+
+      <section id="complete" class="panel complete" hidden>
+        <p class="eyebrow">完成！</p>
+        <h1>吐 鲁 番</h1>
+        <p>你已经用偏旁组出了三个汉字。</p>
+        <button id="againButton" class="primary">再玩一次</button>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
