@@ -3,9 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compile-target": "node scripts/compile-target.mjs"
+    "compile-target": "node scripts/compile-target.mjs",
+    "generate-qr": "node scripts/generate-qr.mjs"
   },
   "dependencies": {
     "mind-ar": "1.2.5"
+  },
+  "devDependencies": {
+    "qrcode": "^1.5.4"
   }
 }

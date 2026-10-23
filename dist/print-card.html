@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>吐鲁番绿洲 · 扫码即玩图卡</title>
+    <style>
+      :root { color: #101827; font-family: "PingFang SC", "Noto Sans SC", sans-serif; }
+      body { margin: 0; background: #e7dfcf; }
+      .card { width: min(760px, 100vw); margin: 24px auto; padding: 26px; box-sizing: border-box; background: #f6f0e3; box-shadow: 0 18px 60px #10182744; }
+      h1 { margin: 0; letter-spacing: .1em; font-size: 30px; }
+      .sub { color: #3d9077; font-weight: 700; letter-spacing: .14em; }
+      .layout { display: grid; grid-template-columns: 1fr 150px; gap: 18px; align-items: end; margin-top: 18px; }
+      .target { width: 100%; display: block; border: 6px solid #d7a84a; box-sizing: border-box; }
+      .qr { text-align: center; border: 2px solid #d7a84a; padding: 10px; }
+      .qr img { width: 128px; height: 128px; }
+      .qr strong { display: block; color: #3d9077; }
+      .qr small { display: block; margin-top: 6px; line-height: 1.45; }
+      .note { margin: 16px 0 0; font-size: 14px; line-height: 1.6; }
+      @media print { body { background: #fff; } .card { width: 100%; margin: 0; box-shadow: none; } }
+    </style>
+  </head>
+  <body>
+    <article class="card">
+      <div class="sub">汉字绿洲 · HSK 草字头挑战</div>
+      <h1>吐鲁番绿洲图卡</h1>
+      <div class="layout">
+        <img class="target" src="./assets/turpan-card.jpg" alt="吐鲁番绿洲 AR 识别图卡" />
+        <aside class="qr">
+          <img src="./assets/scan-to-play.svg" alt="扫码即玩" />
+          <strong>扫码即玩</strong>
+          <small>扫码后允许相机，再将镜头对准左侧图卡。</small>
+        </aside>
+      </div>
+      <p class="note">打印时请保持左侧图卡完整、平整、清晰；二维码置于图卡外侧，不会改变图像识别素材。</p>
+    </article>
+  </body>
+</html>

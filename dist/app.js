@@ -346,6 +346,13 @@ async function startAR() {
   }
 }
 
+// Printed-card QR codes use ?play=1. A phone camera opens the secure page and
+// immediately requests the only permission the game needs, without making the
+// player find the site or press the start button first.
+function shouldAutoStart() {
+  return new URLSearchParams(window.location.search).get('play') === '1';
+}
+
 async function startPractice() {
   practiceButton.disabled = true;
   welcome.hidden = true;
@@ -382,3 +389,8 @@ practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
 againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; welcome.hidden = false; });
 retryCamera.addEventListener('click', startAR);
+
+if (shouldAutoStart()) {
+  // A short delay gives mobile Chrome/Safari time to finish the QR hand-off.
+  window.setTimeout(startAR, 220);
+}
