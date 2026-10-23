@@ -1,11 +1,64 @@
-const levels = [
-  // Detection comfort zone: keep targets in the centre-lower part of the
-  // camera image. The right hand can stay 35–60 cm from the rear camera,
-  // rather than reaching for an upper/right edge where it is easily cropped.
-  { word: '吐', radicals: ['口', '土'], positions: [[43, 46], [59, 56]] },
-  { word: '鲁', radicals: ['鱼', '日'], positions: [[43, 46], [59, 56]] },
-  { word: '番', radicals: ['米', '田'], positions: [[43, 46], [59, 56]] },
-];
+// Formal six-stage curriculum. Each stage selects three words at random; HSK 2
+// has only one new grass-radical word in this pilot list, so it mixes reviews.
+const hskWords = {
+  1: [
+    { word: '茶', pinyin: 'chá', radicals: ['艹', '人', '木'] },
+    { word: '菜', pinyin: 'cài', radicals: ['艹', '采'] },
+    { word: '苹', pinyin: 'píng', radicals: ['艹', '平'] },
+  ],
+  2: [
+    { word: '药', pinyin: 'yào', radicals: ['艹', '约'] },
+  ],
+  3: [
+    { word: '草', pinyin: 'cǎo', radicals: ['艹', '早'] },
+    { word: '花', pinyin: 'huā', radicals: ['艹', '化'] },
+    { word: '蓝', pinyin: 'lán', radicals: ['艹', '监'] },
+  ],
+  4: [
+    { word: '落', pinyin: 'luò', radicals: ['艹', '氵', '各'] },
+    { word: '苦', pinyin: 'kǔ', radicals: ['艹', '古'] },
+    { word: '获', pinyin: 'huò', radicals: ['艹', '犭', '又'] },
+  ],
+  5: [
+    { word: '苗', pinyin: 'miáo', radicals: ['艹', '田'] },
+    { word: '荣', pinyin: 'róng', radicals: ['艹', '冖', '木'] },
+    { word: '蔬', pinyin: 'shū', radicals: ['艹', '疏'] },
+  ],
+  6: [
+    { word: '蕾', pinyin: 'lěi', radicals: ['艹', '雨', '田'] },
+    { word: '芽', pinyin: 'yá', radicals: ['艹', '牙'] },
+    { word: '萌', pinyin: 'méng', radicals: ['艹', '明'] },
+  ],
+};
+
+function shuffled(words) {
+  return [...words].sort(() => Math.random() - 0.5);
+}
+
+function positionsFor(count) {
+  if (count === 2) return [[43, 46], [59, 56]];
+  return [[38, 46], [51, 56], [64, 46]];
+}
+
+function createCampaign() {
+  const campaign = [];
+  const learned = [];
+  for (let hsk = 1; hsk <= 6; hsk += 1) {
+    const primary = shuffled(hskWords[hsk]);
+    const selected = primary.slice(0, 3);
+    if (selected.length < 3) selected.push(...shuffled(learned).slice(0, 3 - selected.length));
+    selected.forEach((entry, stageIndex) => campaign.push({
+      ...entry,
+      hsk,
+      stageIndex: stageIndex + 1,
+      positions: positionsFor(entry.radicals.length),
+    }));
+    learned.push(...hskWords[hsk]);
+  }
+  return campaign;
+}
+
+let levels = createCampaign();
 
 const welcome = document.querySelector('#welcome');
 const arView = document.querySelector('#arView');
@@ -22,6 +75,8 @@ const retryCamera = document.querySelector('#retryCamera');
 const cursor = document.querySelector('#handCursor');
 const gestureState = document.querySelector('#gestureState');
 const handModeButton = document.querySelector('#handMode');
+const completeHeading = document.querySelector('#complete h1');
+const completeText = document.querySelector('#complete p:not(.eyebrow)');
 
 let levelIndex = 0;
 let active = null;
@@ -128,7 +183,7 @@ function createLevel() {
   slots.innerHTML = '';
   radialNodes = [];
   const level = currentLevel();
-  stageTitle.textContent = `第 ${levelIndex + 1} 关 · 组出「${level.word}」`;
+  stageTitle.textContent = `HSK ${level.hsk} · 第 ${level.stageIndex}/3 字 · 组出「${level.word}」`;
   level.radicals.forEach((radical, index) => {
     const slot = document.createElement('div');
     slot.className = 'slot';
@@ -205,11 +260,14 @@ function advanceLevel() {
   levelIndex += 1;
   if (levelIndex >= levels.length) {
     stopGame();
+    completeHeading.textContent = '六级绿洲完成';
+    completeText.textContent = '你完成了 HSK 1–6 的 18 个随机草字头组字挑战。';
     complete.hidden = false;
     return;
   }
   createLevel();
-  setStatus(foundTarget ? '图卡已识别，捏合偏旁来组字' : '兼容模式：捏合偏旁到下方格子');
+  const level = currentLevel();
+  setStatus((foundTarget ? '图卡已识别' : '相机游戏') + ` · HSK ${level.hsk} 第 ${level.stageIndex}/3 字：捏合偏旁来组字`);
 }
 
 async function setupHandTracking(video) {
@@ -432,7 +490,7 @@ function stopGame() {
 startButton.addEventListener('click', startAR);
 practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
-againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; welcome.hidden = false; });
+againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; levels = createCampaign(); welcome.hidden = false; });
 retryCamera.addEventListener('click', startAR);
 handModeButton.addEventListener('click', () => {
   playingHand = playingHand === 'right' ? 'left' : 'right';
