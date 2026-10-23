@@ -1,7 +1,9 @@
 const levels = [
-  { word: '吐', radicals: ['口', '土'], positions: [[27, 37], [71, 30]] },
-  { word: '鲁', radicals: ['鱼', '日'], positions: [[25, 42], [72, 34]] },
-  { word: '番', radicals: ['米', '田'], positions: [[31, 32], [70, 42]] },
+  // Right-hand comfort layout: a player can hold the phone in the left hand
+  // and reach both pieces without twisting across the screen.
+  { word: '吐', radicals: ['口', '土'], positions: [[57, 34], [73, 46]] },
+  { word: '鲁', radicals: ['鱼', '日'], positions: [[57, 35], [73, 48]] },
+  { word: '番', radicals: ['米', '田'], positions: [[57, 34], [73, 47]] },
 ];
 
 const welcome = document.querySelector('#welcome');
@@ -82,7 +84,7 @@ async function startFallbackCamera() {
   arView.classList.add('found');
   createLevel();
   retryCamera.hidden = true;
-  setStatus('相机已启动（兼容模式）：把手伸进镜头，用拇指和食指捏合偏旁');
+  setStatus('右手单手模式：左手持机，右手伸进镜头捏合偏旁');
   await setupHandTracking(video);
 }
 
@@ -312,7 +314,7 @@ async function startAR() {
     anchor.onTargetFound = () => {
       foundTarget = true;
       arView.classList.add('found');
-      setStatus('图卡已识别！把手伸进镜头，捏合偏旁来组字');
+      setStatus('右手单手模式：左手持机，右手捏合偏旁来组字');
     };
     anchor.onTargetLost = () => {
       foundTarget = false;
