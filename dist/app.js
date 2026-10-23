@@ -15,6 +15,7 @@ const layer = document.querySelector('#radicalLayer');
 const slots = document.querySelector('#slots');
 const stageTitle = document.querySelector('#stageTitle');
 const status = document.querySelector('#status');
+const retryCamera = document.querySelector('#retryCamera');
 const cursor = document.querySelector('#handCursor');
 const gestureState = document.querySelector('#gestureState');
 
@@ -31,6 +32,31 @@ let MindARThree;
 let THREE;
 
 function setStatus(message) { status.textContent = message; }
+
+async function requestCameraPermission() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('当前浏览器不支持网页相机');
+  }
+  // Ask for Android/iPhone browser permission before loading the AR engine. This keeps
+  // the request directly attached to the player's tap, which mobile browsers require.
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: { facingMode: { ideal: 'environment' } },
+  });
+  stream.getTracks().forEach((track) => track.stop());
+}
+
+function showCameraError(error) {
+  console.error(error);
+  retryCamera.hidden = false;
+  if (error?.name === 'NotAllowedError') {
+    setStatus('相机未获允许：点地址栏左侧图标 → 权限 → 相机 → 允许，再点下方按钮');
+  } else if (error?.name === 'NotFoundError') {
+    setStatus('没有找到可用相机，请关闭占用相机的应用后重试');
+  } else {
+    setStatus('相机启动失败，请点“重新开启相机”再试');
+  }
+}
 
 function currentLevel() { return levels[levelIndex]; }
 
@@ -188,10 +214,17 @@ function updateHand(result) {
 
 async function startAR() {
   startButton.disabled = true;
+  retryCamera.hidden = true;
+  if (mindar) {
+    mindar.stop();
+    mindar = null;
+  }
   welcome.hidden = true;
   arView.style.display = 'block';
-  setStatus('正在打开后置相机…');
+  setStatus('请在浏览器弹窗中允许使用相机…');
   try {
+    await requestCameraPermission();
+    setStatus('相机已允许，正在载入图卡识别…');
     ({ MindARThree } = await import('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js'));
     THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
     mindar = new MindARThree({
@@ -224,8 +257,7 @@ async function startAR() {
     setStatus('请将吐鲁番图卡完整放进镜头');
     await setupHandTracking(mindar.video);
   } catch (error) {
-    console.error(error);
-    setStatus('相机启动失败，请在 Safari 或 Chrome 中允许相机权限');
+    showCameraError(error);
     practiceButton.hidden = false;
   } finally {
     startButton.disabled = false;
@@ -253,12 +285,14 @@ function stopGame() {
   arView.style.display = 'none';
   arView.classList.remove('found');
   cursor.style.opacity = '0';
+  retryCamera.hidden = true;
 }
 
 startButton.addEventListener('click', startAR);
 practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
 againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; welcome.hidden = false; });
+retryCamera.addEventListener('click', startAR);
 window.addEventListener('pointermove', (event) => moveActive(event.clientX, event.clientY));
 window.addEventListener('pointerup', release);
 window.addEventListener('pointercancel', release);
