@@ -30,6 +30,7 @@ let mindar = null;
 let animationFrame = 0;
 let MindARThree;
 let THREE;
+let fallbackStream = null;
 
 function setStatus(message) { status.textContent = message; }
 
@@ -61,6 +62,34 @@ function showCameraError(error, permissionGranted) {
   } else {
     setStatus('相机启动失败，请点“重新开启相机”再试');
   }
+}
+
+async function startFallbackCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: { facingMode: { ideal: 'environment' } },
+  });
+  fallbackStream = stream;
+  const video = document.createElement('video');
+  video.autoplay = true;
+  video.muted = true;
+  video.playsInline = true;
+  video.srcObject = stream;
+  document.querySelector('#cameraContainer').replaceChildren(video);
+  await video.play();
+  arView.classList.add('found');
+  createLevel();
+  retryCamera.hidden = true;
+  setStatus('相机已启动（兼容模式）：偏旁可以抓取；图卡定位暂未启用');
+  await setupHandTracking(video);
+}
+
+function releaseMindARCamera() {
+  if (!mindar) return;
+  try { mindar.controller?.stopProcessVideo?.(); } catch { /* no controller on an early failure */ }
+  try { mindar.video?.srcObject?.getTracks?.().forEach((track) => track.stop()); } catch { /* stream was never attached */ }
+  mindar.video?.remove?.();
+  mindar = null;
 }
 
 function currentLevel() { return levels[levelIndex]; }
@@ -220,10 +249,10 @@ function updateHand(result) {
 async function startAR() {
   startButton.disabled = true;
   retryCamera.hidden = true;
-  if (mindar) {
-    mindar.stop();
-    mindar = null;
-  }
+  releaseMindARCamera();
+  fallbackStream?.getTracks().forEach((track) => track.stop());
+  fallbackStream = null;
+  document.querySelector('#cameraContainer').replaceChildren();
   welcome.hidden = true;
   arView.style.display = 'block';
   setStatus('请在浏览器弹窗中允许使用相机…');
@@ -264,7 +293,17 @@ async function startAR() {
     setStatus('请将吐鲁番图卡完整放进镜头');
     await setupHandTracking(mindar.video);
   } catch (error) {
-    showCameraError(error, permissionGranted);
+    if (permissionGranted) {
+      try {
+        releaseMindARCamera();
+        await startFallbackCamera();
+        return;
+      } catch (fallbackError) {
+        showCameraError(fallbackError, true);
+      }
+    } else {
+      showCameraError(error, false);
+    }
     practiceButton.hidden = false;
   } finally {
     startButton.disabled = false;
@@ -286,9 +325,11 @@ function stopGame() {
   handLandmarker?.close?.();
   handLandmarker = null;
   if (mindar) {
-    mindar.stop();
-    mindar = null;
+    releaseMindARCamera();
   }
+  fallbackStream?.getTracks().forEach((track) => track.stop());
+  fallbackStream = null;
+  document.querySelector('#cameraContainer').replaceChildren();
   arView.style.display = 'none';
   arView.classList.remove('found');
   cursor.style.opacity = '0';
