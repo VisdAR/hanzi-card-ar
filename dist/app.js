@@ -1,9 +1,10 @@
 const levels = [
-  // Right-hand comfort layout: a player can hold the phone in the left hand
-  // and reach both pieces without twisting across the screen.
-  { word: '吐', radicals: ['口', '土'], positions: [[57, 34], [73, 46]] },
-  { word: '鲁', radicals: ['鱼', '日'], positions: [[57, 35], [73, 48]] },
-  { word: '番', radicals: ['米', '田'], positions: [[57, 34], [73, 47]] },
+  // Detection comfort zone: keep targets in the centre-lower part of the
+  // camera image. The right hand can stay 35–60 cm from the rear camera,
+  // rather than reaching for an upper/right edge where it is easily cropped.
+  { word: '吐', radicals: ['口', '土'], positions: [[43, 46], [59, 56]] },
+  { word: '鲁', radicals: ['鱼', '日'], positions: [[43, 46], [59, 56]] },
+  { word: '番', radicals: ['米', '田'], positions: [[43, 46], [59, 56]] },
 ];
 
 const welcome = document.querySelector('#welcome');
@@ -84,7 +85,7 @@ async function startFallbackCamera() {
   arView.classList.add('found');
   createLevel();
   retryCamera.hidden = true;
-  setStatus('右手单手模式：左手持机，右手伸进镜头捏合偏旁');
+  setStatus('右手自然放在画面中下方，离镜头约 35–60 厘米后再捏合偏旁');
   await setupHandTracking(video);
 }
 
@@ -261,7 +262,7 @@ function updateHand(result) {
   cursor.classList.toggle('pinching', pinching);
   if (handDetectionState !== 'seen' && !active) {
     handDetectionState = 'seen';
-    gestureState.textContent = '已识别到手！用光圈对准偏旁，再捏合抓取';
+    gestureState.textContent = '已识别到手！保持整只手入镜，在中下方对准偏旁后捏合';
   }
   moveActive(x, y);
   if (pinching && !active) {
@@ -314,7 +315,7 @@ async function startAR() {
     anchor.onTargetFound = () => {
       foundTarget = true;
       arView.classList.add('found');
-      setStatus('右手单手模式：左手持机，右手捏合偏旁来组字');
+      setStatus('图卡已识别：右手放在画面中下方，离镜头约 35–60 厘米后捏合偏旁');
     };
     anchor.onTargetLost = () => {
       foundTarget = false;
