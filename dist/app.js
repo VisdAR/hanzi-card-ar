@@ -31,6 +31,7 @@ let animationFrame = 0;
 let MindARThree;
 let THREE;
 let fallbackStream = null;
+let handDetectionState = 'starting';
 
 function setStatus(message) { status.textContent = message; }
 
@@ -200,7 +201,8 @@ async function setupHandTracking(video) {
       runningMode: 'VIDEO',
       numHands: 1,
     });
-    gestureState.textContent = '手伸进镜头：拇指和食指捏合偏旁，移动后松开';
+    gestureState.textContent = '等待看见手…请让整只手出现在相机画面内';
+    handDetectionState = 'waiting';
     const tick = () => {
       if (!handLandmarker || !video || video.readyState < 2) {
         animationFrame = requestAnimationFrame(tick);
@@ -225,6 +227,10 @@ function updateHand(result) {
   if (!hand) {
     cursor.style.opacity = '0';
     if (active?.dataset.handGrab === 'true') release();
+    if (handDetectionState !== 'missing') {
+      handDetectionState = 'missing';
+      gestureState.textContent = '未看到手：请让整只手出现在相机画面内';
+    }
     return;
   }
   const tip = hand[8];
@@ -237,6 +243,10 @@ function updateHand(result) {
   cursor.style.left = `${x}px`;
   cursor.style.top = `${y}px`;
   cursor.classList.toggle('pinching', pinching);
+  if (handDetectionState !== 'seen' && !active) {
+    handDetectionState = 'seen';
+    gestureState.textContent = '看到手了！用光圈对准偏旁，再捏合抓取';
+  }
   moveActive(x, y);
   if (pinching && !active) {
     const nearby = radialNodes.find((node) => {
