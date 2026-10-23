@@ -42,11 +42,11 @@ let pinchReleaseStartedAt = 0;
 let pinchHeld = false;
 let playingHand = localStorage.getItem('hanzi-playing-hand') === 'left' ? 'left' : 'right';
 
-const PICKUP_RADIUS_PX = 108;
-const PINCH_CLOSE_DISTANCE = 0.09;
-const PINCH_OPEN_DISTANCE = 0.145;
-const PINCH_RELEASE_GRACE_MS = 180;
-const HAND_LOSS_GRACE_MS = 280;
+const PICKUP_RADIUS_PX = 144;
+const PINCH_CLOSE_DISTANCE = 0.11;
+const PINCH_OPEN_DISTANCE = 0.20;
+const PINCH_RELEASE_GRACE_MS = 650;
+const HAND_LOSS_GRACE_MS = 850;
 
 function describeHandMode() {
   return playingHand === 'right' ? '左手持机 · 右手抓取' : '右手持机 · 左手抓取';
