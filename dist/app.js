@@ -37,7 +37,16 @@ let THREE;
 let fallbackStream = null;
 let handDetectionState = 'starting';
 let lastHandStatusAt = 0;
+let lastHandSeenAt = 0;
+let pinchReleaseStartedAt = 0;
+let pinchHeld = false;
 let playingHand = localStorage.getItem('hanzi-playing-hand') === 'left' ? 'left' : 'right';
+
+const PICKUP_RADIUS_PX = 108;
+const PINCH_CLOSE_DISTANCE = 0.09;
+const PINCH_OPEN_DISTANCE = 0.145;
+const PINCH_RELEASE_GRACE_MS = 180;
+const HAND_LOSS_GRACE_MS = 280;
 
 function describeHandMode() {
   return playingHand === 'right' ? '左手持机 · 右手抓取' : '右手持机 · 左手抓取';
@@ -257,7 +266,12 @@ function updateHand(result) {
   const hand = result?.landmarks?.[0];
   if (!hand) {
     cursor.style.opacity = '0';
-    if (active?.dataset.handGrab === 'true') release();
+    if (active?.dataset.handGrab === 'true' && performance.now() - lastHandSeenAt > HAND_LOSS_GRACE_MS) {
+      pinchHeld = false;
+      pinchReleaseStartedAt = 0;
+      delete active.dataset.handGrab;
+      release();
+    }
     if (handDetectionState !== 'missing' || performance.now() - lastHandStatusAt > 1800) {
       handDetectionState = 'missing';
       lastHandStatusAt = performance.now();
@@ -270,29 +284,42 @@ function updateHand(result) {
   const x = tip.x * innerWidth;
   const y = tip.y * innerHeight;
   const distance = Math.hypot(tip.x - thumb.x, tip.y - thumb.y);
-  const pinching = distance < 0.065;
+  lastHandSeenAt = performance.now();
+  const pinchLimit = pinchHeld ? PINCH_OPEN_DISTANCE : PINCH_CLOSE_DISTANCE;
+  if (distance < pinchLimit) {
+    pinchHeld = true;
+    pinchReleaseStartedAt = 0;
+  } else if (pinchHeld) {
+    if (!pinchReleaseStartedAt) pinchReleaseStartedAt = performance.now();
+    if (performance.now() - pinchReleaseStartedAt >= PINCH_RELEASE_GRACE_MS) {
+      pinchHeld = false;
+      pinchReleaseStartedAt = 0;
+    }
+  }
   cursor.style.opacity = '1';
   cursor.style.left = `${x}px`;
   cursor.style.top = `${y}px`;
-  cursor.classList.toggle('pinching', pinching);
+  cursor.classList.toggle('pinching', pinchHeld);
   if (handDetectionState !== 'seen' && !active) {
     handDetectionState = 'seen';
     gestureState.textContent = '已识别到手！保持整只手入镜，在中下方对准偏旁后捏合';
   }
   moveActive(x, y);
-  if (pinching && !active) {
-    const nearby = radialNodes.find((node) => {
-      if (node.classList.contains('used')) return false;
-      const rect = node.getBoundingClientRect();
-      return Math.hypot(x - (rect.left + rect.width / 2), y - (rect.top + rect.height / 2)) < 58;
-    });
-    if (nearby) {
-      grab(nearby, x, y);
-      nearby.dataset.handGrab = 'true';
+  if (pinchHeld && !active) {
+    const nearby = radialNodes
+      .filter((node) => !node.classList.contains('used'))
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        return { node, distance: Math.hypot(x - (rect.left + rect.width / 2), y - (rect.top + rect.height / 2)) };
+      })
+      .sort((a, b) => a.distance - b.distance)[0];
+    if (nearby && nearby.distance < PICKUP_RADIUS_PX) {
+      grab(nearby.node, x, y);
+      nearby.node.dataset.handGrab = 'true';
       gestureState.textContent = '捏合已抓住偏旁';
     }
   }
-  if (!pinching && active?.dataset.handGrab === 'true') {
+  if (!pinchHeld && active?.dataset.handGrab === 'true') {
     delete active.dataset.handGrab;
     release();
   }
@@ -388,6 +415,8 @@ function stopGame() {
   animationFrame = 0;
   handLandmarker?.close?.();
   handLandmarker = null;
+  pinchHeld = false;
+  pinchReleaseStartedAt = 0;
   if (mindar) {
     releaseMindARCamera();
   }
