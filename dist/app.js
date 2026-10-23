@@ -32,6 +32,7 @@ let MindARThree;
 let THREE;
 let fallbackStream = null;
 let handDetectionState = 'starting';
+let lastHandStatusAt = 0;
 
 function setStatus(message) { status.textContent = message; }
 
@@ -200,6 +201,9 @@ async function setupHandTracking(video) {
       },
       runningMode: 'VIDEO',
       numHands: 1,
+      minHandDetectionConfidence: 0.25,
+      minHandPresenceConfidence: 0.25,
+      minTrackingConfidence: 0.25,
     });
     gestureState.textContent = '等待看见手…请让整只手出现在相机画面内';
     handDetectionState = 'waiting';
@@ -210,8 +214,17 @@ async function setupHandTracking(video) {
       }
       if (lastVideoTime !== video.currentTime) {
         lastVideoTime = video.currentTime;
-        const result = handLandmarker.detectForVideo(video, performance.now());
-        updateHand(result);
+        try {
+          const result = handLandmarker.detectForVideo(video, performance.now());
+          updateHand(result);
+        } catch (error) {
+          console.error('Hand tracking stopped while analyzing video:', error);
+          handLandmarker?.close?.();
+          handLandmarker = null;
+          cursor.style.opacity = '0';
+          gestureState.textContent = '手势引擎运行中断，正在准备修复版本';
+          return;
+        }
       }
       animationFrame = requestAnimationFrame(tick);
     };
@@ -227,9 +240,10 @@ function updateHand(result) {
   if (!hand) {
     cursor.style.opacity = '0';
     if (active?.dataset.handGrab === 'true') release();
-    if (handDetectionState !== 'missing') {
+    if (handDetectionState !== 'missing' || performance.now() - lastHandStatusAt > 1800) {
       handDetectionState = 'missing';
-      gestureState.textContent = '未看到手：请让整只手出现在相机画面内';
+      lastHandStatusAt = performance.now();
+      gestureState.textContent = '正在分析相机画面：暂未识别到手';
     }
     return;
   }
@@ -245,7 +259,7 @@ function updateHand(result) {
   cursor.classList.toggle('pinching', pinching);
   if (handDetectionState !== 'seen' && !active) {
     handDetectionState = 'seen';
-    gestureState.textContent = '看到手了！用光圈对准偏旁，再捏合抓取';
+    gestureState.textContent = '已识别到手！用光圈对准偏旁，再捏合抓取';
   }
   moveActive(x, y);
   if (pinching && !active) {
