@@ -80,7 +80,7 @@ async function startFallbackCamera() {
   arView.classList.add('found');
   createLevel();
   retryCamera.hidden = true;
-  setStatus('相机已启动（兼容模式）：偏旁可以抓取；图卡定位暂未启用');
+  setStatus('相机已启动（兼容模式）：把手伸进镜头，用拇指和食指捏合偏旁');
   await setupHandTracking(video);
 }
 
@@ -113,11 +113,6 @@ function createLevel() {
     node.dataset.radical = radical;
     node.style.left = `${level.positions[index][0]}%`;
     node.style.top = `${level.positions[index][1]}%`;
-    node.addEventListener('pointerdown', (event) => {
-      event.preventDefault();
-      grab(node, event.clientX, event.clientY);
-      node.setPointerCapture?.(event.pointerId);
-    });
     layer.append(node);
     radialNodes.push(node);
   });
@@ -139,25 +134,37 @@ function moveActive(x, y) {
   active.style.top = `${y}px`;
 }
 
+function placeActiveInSlot(slot) {
+  if (!active || slot.classList.contains('filled')) return false;
+  const node = active;
+  if (slot.dataset.radical !== node.dataset.radical) {
+    gestureState.textContent = '这个格子不对，换另一个虚线格';
+    return false;
+  }
+  active = null;
+  node.classList.remove('held');
+  slot.textContent = node.dataset.radical;
+  slot.classList.add('filled');
+  node.classList.add('used');
+  gestureState.textContent = '很好！继续找下一个偏旁';
+  if (document.querySelectorAll('.slot.filled').length === currentLevel().radicals.length) {
+    setTimeout(advanceLevel, 520);
+  }
+  return true;
+}
+
 function release() {
   if (!active) return;
   const node = active;
-  active = null;
-  node.classList.remove('held');
   const matchingSlot = [...document.querySelectorAll('.slot:not(.filled)')]
     .find((slot) => slot.dataset.radical === node.dataset.radical);
   const slotsRect = slots.getBoundingClientRect();
   const inAnswerZone = pointer.y >= slotsRect.top - 35;
-  if (matchingSlot && inAnswerZone) {
-    matchingSlot.textContent = node.dataset.radical;
-    matchingSlot.classList.add('filled');
-    node.classList.add('used');
-    gestureState.textContent = '很好！继续找下一个偏旁';
-    if (document.querySelectorAll('.slot.filled').length === currentLevel().radicals.length) {
-      setTimeout(advanceLevel, 520);
-    }
+  if (matchingSlot && inAnswerZone && placeActiveInSlot(matchingSlot)) {
+    return;
   } else {
-    gestureState.textContent = '把偏旁拖到下方虚线格里';
+    active = null;
+    gestureState.textContent = '捏合偏旁后，把手移到下方虚线格再松开';
     const index = radialNodes.indexOf(node);
     const origin = currentLevel().positions[index];
     node.style.left = `${origin[0]}%`;
@@ -173,25 +180,27 @@ function advanceLevel() {
     return;
   }
   createLevel();
-  setStatus(foundTarget ? '图卡已识别，偏旁已出现' : '试玩模式：拖动偏旁到下方格子');
+  setStatus(foundTarget ? '图卡已识别，捏合偏旁来组字' : '兼容模式：捏合偏旁到下方格子');
 }
 
 async function setupHandTracking(video) {
   try {
+    gestureState.textContent = '正在准备真实手势识别…';
     const { FilesetResolver, HandLandmarker } = await import(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm'
+      './assets/mediapipe/vision_bundle.mjs'
     );
     const vision = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm'
+      './assets/mediapipe/wasm'
     );
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-        delegate: 'GPU',
+        modelAssetPath: './assets/mediapipe/hand_landmarker.task',
+        delegate: 'CPU',
       },
       runningMode: 'VIDEO',
       numHands: 1,
     });
+    gestureState.textContent = '手伸进镜头：拇指和食指捏合偏旁，移动后松开';
     const tick = () => {
       if (!handLandmarker || !video || video.readyState < 2) {
         animationFrame = requestAnimationFrame(tick);
@@ -205,8 +214,9 @@ async function setupHandTracking(video) {
       animationFrame = requestAnimationFrame(tick);
     };
     tick();
-  } catch {
-    gestureState.textContent = '手势加载失败，也可以直接手指拖动偏旁';
+  } catch (error) {
+    console.error('Hand tracking could not start:', error);
+    gestureState.textContent = '手势识别未启动，请刷新页面后重新允许相机';
   }
 }
 
@@ -278,7 +288,7 @@ async function startAR() {
     anchor.onTargetFound = () => {
       foundTarget = true;
       arView.classList.add('found');
-      setStatus('图卡已识别！捏合或拖动偏旁');
+      setStatus('图卡已识别！把手伸进镜头，捏合偏旁来组字');
     };
     anchor.onTargetLost = () => {
       foundTarget = false;
@@ -310,13 +320,18 @@ async function startAR() {
   }
 }
 
-function startPractice() {
+async function startPractice() {
+  practiceButton.disabled = true;
   welcome.hidden = true;
   arView.style.display = 'block';
   foundTarget = false;
-  arView.classList.add('found');
-  createLevel();
-  setStatus('试玩模式：直接拖动偏旁到下方虚线格');
+  try {
+    await startFallbackCamera();
+  } catch (error) {
+    showCameraError(error, false);
+  } finally {
+    practiceButton.disabled = false;
+  }
 }
 
 function stopGame() {
@@ -341,6 +356,3 @@ practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
 againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; welcome.hidden = false; });
 retryCamera.addEventListener('click', startAR);
-window.addEventListener('pointermove', (event) => moveActive(event.clientX, event.clientY));
-window.addEventListener('pointerup', release);
-window.addEventListener('pointercancel', release);
