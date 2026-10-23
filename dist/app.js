@@ -44,15 +44,20 @@ async function requestCameraPermission() {
     video: { facingMode: { ideal: 'environment' } },
   });
   stream.getTracks().forEach((track) => track.stop());
+  // Android devices can keep the hardware camera reserved briefly after a
+  // permission probe. Give the AR engine a moment before it opens the rear camera.
+  await new Promise((resolve) => setTimeout(resolve, 650));
 }
 
-function showCameraError(error) {
+function showCameraError(error, permissionGranted) {
   console.error(error);
   retryCamera.hidden = false;
   if (error?.name === 'NotAllowedError') {
     setStatus('相机未获允许：点地址栏左侧图标 → 权限 → 相机 → 允许，再点下方按钮');
   } else if (error?.name === 'NotFoundError') {
     setStatus('没有找到可用相机，请关闭占用相机的应用后重试');
+  } else if (permissionGranted) {
+    setStatus(`相机已允许，但图卡识别未启动（${error?.name || '未知原因'}）。请用 Google Chrome 打开后重试`);
   } else {
     setStatus('相机启动失败，请点“重新开启相机”再试');
   }
@@ -222,8 +227,10 @@ async function startAR() {
   welcome.hidden = true;
   arView.style.display = 'block';
   setStatus('请在浏览器弹窗中允许使用相机…');
+  let permissionGranted = false;
   try {
     await requestCameraPermission();
+    permissionGranted = true;
     setStatus('相机已允许，正在载入图卡识别…');
     ({ MindARThree } = await import('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js'));
     THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
@@ -257,7 +264,7 @@ async function startAR() {
     setStatus('请将吐鲁番图卡完整放进镜头');
     await setupHandTracking(mindar.video);
   } catch (error) {
-    showCameraError(error);
+    showCameraError(error, permissionGranted);
     practiceButton.hidden = false;
   } finally {
     startButton.disabled = false;
