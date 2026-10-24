@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#111827" />
     <title>汉字图卡 AR</title>
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
     <script type="importmap">
       { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js" } }
     </script>
@@ -15,7 +16,7 @@
       <section id="welcome" class="panel welcome">
         <p class="eyebrow">汉字图卡 · Web AR</p>
         <h1>抓偏旁，组汉字</h1>
-        <p>扫码即可进入。左手持机，右手伸进现实画面；用拇指和食指捏住偏旁，移动到下方格子里组字。</p>
+        <p>打开相机后，先扫描吐鲁番图卡；图卡会唤醒一座会动的绿洲，偏旁藏在场景里。用拇指和食指捏住偏旁，移到下方格子里组字。</p>
         <button id="startButton" class="primary">开始相机游戏</button>
         <button id="practiceButton" class="secondary">先试玩（不用图卡）</button>
         <small>首次扫码后请允许相机；此后扫描图卡角落的二维码即可直接开始。</small>
@@ -23,6 +24,16 @@
 
       <section id="arView" aria-label="汉字图卡增强现实游戏">
         <div id="cameraContainer"></div>
+        <div id="oasisScene" class="oasis-scene" aria-hidden="true">
+          <div class="scene-sky"></div>
+          <div class="scene-dunes dune-one"></div>
+          <div class="scene-dunes dune-two"></div>
+          <div class="scene-water"></div>
+          <div class="scene-palms palm-left"></div>
+          <div class="scene-palms palm-right"></div>
+          <div class="scene-fireflies"></div>
+          <p id="sceneCaption" class="scene-caption">图卡唤醒后，绿洲会在现实画面中浮现</p>
+        </div>
         <div id="scanHint" class="scan-hint"><span></span><b>请将吐鲁番图卡完整放入镜头</b></div>
         <div id="status" role="status">正在准备相机…</div>
         <button id="handMode" class="hand-mode" type="button">左手持机 · 右手抓取</button>
@@ -30,7 +41,7 @@
         <div id="radicalLayer" aria-label="可抓取的偏旁"></div>
         <div id="handCursor" aria-hidden="true"></div>
         <section id="lesson" class="lesson" aria-label="组字区域">
-          <div class="lesson-head"><span id="stageTitle">第 1 关 · 组出「吐」</span><span id="gestureState">捏合偏旁，移动手，再松开</span></div>
+          <div class="lesson-head"><span id="stageTitle">扫描图卡以唤醒绿洲</span><span id="gestureState">扫描成功后会出现真实手势抓取</span></div>
           <div id="slots" class="slots"></div>
         </section>
         <button id="exitButton" class="exit" aria-label="退出游戏">×</button>
@@ -43,6 +54,6 @@
         <button id="againButton" class="primary">再玩一次</button>
       </section>
     </main>
-    <script type="module" src="./app.js?v=14"></script>
+    <script type="module" src="./app.js?v=15"></script>
   </body>
 </html>

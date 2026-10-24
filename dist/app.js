@@ -36,8 +36,10 @@ function shuffled(words) {
 }
 
 function positionsFor(count) {
-  if (count === 2) return [[43, 46], [59, 56]];
-  return [[38, 46], [51, 56], [64, 46]];
+  // Keep pieces near the sides of the floating scene instead of close to the
+  // camera centre, where the player's hand needs room to be recognised.
+  if (count === 2) return [[25, 47], [75, 43]];
+  return [[20, 46], [50, 35], [80, 51]];
 }
 
 function createCampaign() {
@@ -77,12 +79,15 @@ const gestureState = document.querySelector('#gestureState');
 const handModeButton = document.querySelector('#handMode');
 const completeHeading = document.querySelector('#complete h1');
 const completeText = document.querySelector('#complete p:not(.eyebrow)');
+const sceneCaption = document.querySelector('#sceneCaption');
 
 let levelIndex = 0;
 let active = null;
 let pointer = { x: 50, y: 40 };
 let radialNodes = [];
 let foundTarget = false;
+let scanConfirmed = false;
+let practiceMode = false;
 let handLandmarker = null;
 let lastVideoTime = -1;
 let mindar = null;
@@ -97,11 +102,11 @@ let pinchReleaseStartedAt = 0;
 let pinchHeld = false;
 let playingHand = localStorage.getItem('hanzi-playing-hand') === 'left' ? 'left' : 'right';
 
-const PICKUP_RADIUS_PX = 144;
-const PINCH_CLOSE_DISTANCE = 0.11;
-const PINCH_OPEN_DISTANCE = 0.20;
-const PINCH_RELEASE_GRACE_MS = 650;
-const HAND_LOSS_GRACE_MS = 850;
+const PICKUP_RADIUS_PX = 195;
+const PINCH_CLOSE_RATIO = 0.72;
+const PINCH_OPEN_RATIO = 1.05;
+const PINCH_RELEASE_GRACE_MS = 1050;
+const HAND_LOSS_GRACE_MS = 1500;
 
 function describeHandMode() {
   return playingHand === 'right' ? '左手持机 · 右手抓取' : '右手持机 · 左手抓取';
@@ -116,6 +121,43 @@ function refreshHandModeLabel() {
 }
 
 function setStatus(message) { status.textContent = message; }
+
+function setSceneCaption(message) { sceneCaption.textContent = message; }
+
+function sceneMessage(level, complete = false) {
+  if (complete) return `「${level.word}」已成 · 绿洲回应了你的文字`;
+  const messages = {
+    1: `初学绿洲 · 找到「${level.word}」的偏旁`,
+    2: `香草小径 · 找到「${level.word}」的偏旁`,
+    3: `花影庭院 · 找到「${level.word}」的偏旁`,
+    4: `风沙古道 · 找到「${level.word}」的偏旁`,
+    5: `苗圃月色 · 找到「${level.word}」的偏旁`,
+    6: `蕾光秘境 · 找到「${level.word}」的偏旁`,
+  };
+  return messages[level.hsk];
+}
+
+function playChime() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const context = new AudioContext();
+    const now = context.currentTime;
+    [523.25, 659.25, 783.99].forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, now + index * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.09, now + index * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.08 + 0.46);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(now + index * 0.08);
+      oscillator.stop(now + index * 0.08 + 0.5);
+    });
+    window.setTimeout(() => context.close(), 1000);
+  } catch { /* sound is an optional enhancement */ }
+}
 
 async function requestCameraPermission() {
   if (!navigator.mediaDevices?.getUserMedia) {
@@ -160,10 +202,13 @@ async function startFallbackCamera() {
   video.srcObject = stream;
   document.querySelector('#cameraContainer').replaceChildren(video);
   await video.play();
-  arView.classList.add('found');
+  practiceMode = true;
+  scanConfirmed = true;
+  arView.classList.add('practice', 'scanned', 'story-mode');
   createLevel();
   retryCamera.hidden = true;
-  setStatus('右手自然放在画面中下方，离镜头约 35–60 厘米后再捏合偏旁');
+  setSceneCaption('试玩模式 · 没有图卡定位，偏旁只会跟随镜头画面');
+  setStatus('试玩模式：手势可用，但不会有图卡扫描后的定位效果');
   await setupHandTracking(video);
 }
 
@@ -183,7 +228,9 @@ function createLevel() {
   slots.innerHTML = '';
   radialNodes = [];
   const level = currentLevel();
+  arView.dataset.hsk = level.hsk;
   stageTitle.textContent = `HSK ${level.hsk} · 第 ${level.stageIndex}/3 字 · 组出「${level.word}」`;
+  setSceneCaption(sceneMessage(level));
   level.radicals.forEach((radical, index) => {
     const slot = document.createElement('div');
     slot.className = 'slot';
@@ -232,7 +279,15 @@ function placeActiveInSlot(slot) {
   node.classList.add('used');
   gestureState.textContent = '很好！继续找下一个偏旁';
   if (document.querySelectorAll('.slot.filled').length === currentLevel().radicals.length) {
-    setTimeout(advanceLevel, 520);
+    const level = currentLevel();
+    setSceneCaption(sceneMessage(level, true));
+    arView.classList.add('scene-bloom');
+    playChime();
+    gestureState.textContent = `「${level.word}」完成！绿洲正在变化…`;
+    setTimeout(() => {
+      arView.classList.remove('scene-bloom');
+      advanceLevel();
+    }, 1400);
   }
   return true;
 }
@@ -267,7 +322,7 @@ function advanceLevel() {
   }
   createLevel();
   const level = currentLevel();
-  setStatus((foundTarget ? '图卡已识别' : '相机游戏') + ` · HSK ${level.hsk} 第 ${level.stageIndex}/3 字：捏合偏旁来组字`);
+  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '绿洲已唤醒') + ` · HSK ${level.hsk} 第 ${level.stageIndex}/3 字：捏合偏旁来组字`);
 }
 
 async function setupHandTracking(video) {
@@ -285,10 +340,12 @@ async function setupHandTracking(video) {
         delegate: 'CPU',
       },
       runningMode: 'VIDEO',
-      numHands: 1,
-      minHandDetectionConfidence: 0.25,
-      minHandPresenceConfidence: 0.25,
-      minTrackingConfidence: 0.25,
+      // Two hands lets the player hold the phone naturally and still have the
+      // free hand selected, including a left-handed setup.
+      numHands: 2,
+      minHandDetectionConfidence: 0.14,
+      minHandPresenceConfidence: 0.14,
+      minTrackingConfidence: 0.14,
     });
     gestureState.textContent = '等待看见手…请让整只手出现在相机画面内';
     handDetectionState = 'waiting';
@@ -320,8 +377,22 @@ async function setupHandTracking(video) {
   }
 }
 
+function selectPlayingHand(result) {
+  const hands = result?.landmarks || [];
+  if (!hands.length) return null;
+  const wanted = playingHand === 'right' ? 'right' : 'left';
+  const labels = result?.handednesses || [];
+  const matchingIndex = labels.findIndex((labelSet) => {
+    const label = labelSet?.[0]?.categoryName?.toLowerCase();
+    return label === wanted;
+  });
+  // Some rear cameras report no handedness or reverse it. A visible hand is
+  // still more useful than silently refusing to recognise anything.
+  return hands[matchingIndex >= 0 ? matchingIndex : 0];
+}
+
 function updateHand(result) {
-  const hand = result?.landmarks?.[0];
+  const hand = selectPlayingHand(result);
   if (!hand) {
     cursor.style.opacity = '0';
     if (active?.dataset.handGrab === 'true' && performance.now() - lastHandSeenAt > HAND_LOSS_GRACE_MS) {
@@ -339,12 +410,16 @@ function updateHand(result) {
   }
   const tip = hand[8];
   const thumb = hand[4];
-  const x = tip.x * innerWidth;
-  const y = tip.y * innerHeight;
+  const video = document.querySelector('#cameraContainer video');
+  const videoRect = video?.getBoundingClientRect();
+  const x = (videoRect?.left || 0) + tip.x * (videoRect?.width || innerWidth);
+  const y = (videoRect?.top || 0) + tip.y * (videoRect?.height || innerHeight);
   const distance = Math.hypot(tip.x - thumb.x, tip.y - thumb.y);
+  const palmSize = Math.max(0.045, Math.hypot(hand[0].x - hand[9].x, hand[0].y - hand[9].y));
+  const pinchRatio = distance / palmSize;
   lastHandSeenAt = performance.now();
-  const pinchLimit = pinchHeld ? PINCH_OPEN_DISTANCE : PINCH_CLOSE_DISTANCE;
-  if (distance < pinchLimit) {
+  const pinchLimit = pinchHeld ? PINCH_OPEN_RATIO : PINCH_CLOSE_RATIO;
+  if (pinchRatio < pinchLimit) {
     pinchHeld = true;
     pinchReleaseStartedAt = 0;
   } else if (pinchHeld) {
@@ -360,7 +435,7 @@ function updateHand(result) {
   cursor.classList.toggle('pinching', pinchHeld);
   if (handDetectionState !== 'seen' && !active) {
     handDetectionState = 'seen';
-    gestureState.textContent = '已识别到手！保持整只手入镜，在中下方对准偏旁后捏合';
+    gestureState.textContent = '已识别到手！手心或手背都可，食指和拇指合拢约 1 秒即可抓住';
   }
   moveActive(x, y);
   if (pinchHeld && !active) {
@@ -386,6 +461,10 @@ function updateHand(result) {
 async function startAR() {
   startButton.disabled = true;
   retryCamera.hidden = true;
+  practiceMode = false;
+  scanConfirmed = false;
+  foundTarget = false;
+  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom');
   releaseMindARCamera();
   fallbackStream?.getTracks().forEach((track) => track.stop());
   fallbackStream = null;
@@ -414,33 +493,39 @@ async function startAR() {
     const anchor = mindar.addAnchor(0);
     anchor.onTargetFound = () => {
       foundTarget = true;
-      arView.classList.add('found');
-      setStatus('图卡已识别：右手放在画面中下方，离镜头约 35–60 厘米后捏合偏旁');
+      const isFirstScan = !scanConfirmed;
+      scanConfirmed = true;
+      arView.classList.add('found', 'scanned');
+      arView.classList.remove('story-mode');
+      if (isFirstScan) {
+        createLevel();
+        setStatus('图卡已识别：绿洲已在现实画面中浮现，偏旁藏在场景里');
+        gestureState.textContent = '图卡已唤醒。手心或手背都可；整只抓取手入镜，拇指和食指合拢约 1 秒';
+      } else {
+        setStatus('图卡重新校准完成：继续在绿洲中抓取偏旁');
+      }
     };
     anchor.onTargetLost = () => {
       foundTarget = false;
       arView.classList.remove('found');
-      setStatus('图卡离开镜头，请重新对准');
+      if (scanConfirmed) {
+        // Image tracking needs the card in view to stay spatially anchored.
+        // Keep the story scene alive after a scan, but state this honestly.
+        arView.classList.add('story-mode');
+        setStatus('绿洲已唤醒：图卡离开后进入漂浮场景；需要定位时请再扫一次图卡');
+      } else {
+        setStatus('请将吐鲁番图卡完整放进镜头');
+      }
     };
     const markerLight = new THREE.HemisphereLight(0xffffff, 0x22113c, 1.4);
     scene.add(markerLight);
     await mindar.start();
     renderer.setAnimationLoop(() => renderer.render(scene, camera));
-    createLevel();
-    setStatus('请将吐鲁番图卡完整放进镜头');
+    setStatus('请将吐鲁番图卡完整放进镜头；识别成功后才会出现偏旁');
     await setupHandTracking(mindar.video);
   } catch (error) {
-    if (permissionGranted) {
-      try {
-        releaseMindARCamera();
-        await startFallbackCamera();
-        return;
-      } catch (fallbackError) {
-        showCameraError(fallbackError, true);
-      }
-    } else {
-      showCameraError(error, false);
-    }
+    releaseMindARCamera();
+    showCameraError(error, permissionGranted);
     practiceButton.hidden = false;
   } finally {
     startButton.disabled = false;
@@ -459,6 +544,7 @@ async function startPractice() {
   welcome.hidden = true;
   arView.style.display = 'block';
   foundTarget = false;
+  arView.classList.remove('found', 'scene-bloom');
   try {
     await startFallbackCamera();
   } catch (error) {
@@ -482,7 +568,10 @@ function stopGame() {
   fallbackStream = null;
   document.querySelector('#cameraContainer').replaceChildren();
   arView.style.display = 'none';
-  arView.classList.remove('found');
+  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom');
+  scanConfirmed = false;
+  practiceMode = false;
+  foundTarget = false;
   cursor.style.opacity = '0';
   retryCamera.hidden = true;
 }
@@ -497,7 +586,7 @@ handModeButton.addEventListener('click', () => {
   localStorage.setItem('hanzi-playing-hand', playingHand);
   refreshHandModeLabel();
   if (arView.style.display === 'block') {
-    createLevel();
+    if (scanConfirmed) createLevel();
     gestureState.textContent = '已切换手势方向，保持整只抓取手在中下方入镜';
   }
 });
