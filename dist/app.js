@@ -159,31 +159,15 @@ function playChime() {
   } catch { /* sound is an optional enhancement */ }
 }
 
-async function requestCameraPermission() {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('当前浏览器不支持网页相机');
-  }
-  // Ask for Android/iPhone browser permission before loading the AR engine. This keeps
-  // the request directly attached to the player's tap, which mobile browsers require.
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: { facingMode: { ideal: 'environment' } },
-  });
-  stream.getTracks().forEach((track) => track.stop());
-  // Android devices can keep the hardware camera reserved briefly after a
-  // permission probe. Give the AR engine a moment before it opens the rear camera.
-  await new Promise((resolve) => setTimeout(resolve, 650));
-}
-
-function showCameraError(error, permissionGranted) {
+function showCameraError(error, afterCameraAttempt) {
   console.error(error);
   retryCamera.hidden = false;
   if (error?.name === 'NotAllowedError') {
     setStatus('相机未获允许：点地址栏左侧图标 → 权限 → 相机 → 允许，再点下方按钮');
   } else if (error?.name === 'NotFoundError') {
     setStatus('没有找到可用相机，请关闭占用相机的应用后重试');
-  } else if (permissionGranted) {
-    setStatus(`相机已允许，但图卡识别未启动（${error?.name || '未知原因'}）。请用 Google Chrome 打开后重试`);
+  } else if (afterCameraAttempt) {
+    setStatus(`图卡扫描未启动（${error?.message || error?.name || '未知原因'}）。已改为一次性启动相机，请点下方按钮重试`);
   } else {
     setStatus('相机启动失败，请点“重新开启相机”再试');
   }
@@ -471,14 +455,13 @@ async function startAR() {
   document.querySelector('#cameraContainer').replaceChildren();
   welcome.hidden = true;
   arView.style.display = 'block';
-  setStatus('请在浏览器弹窗中允许使用相机…');
-  let permissionGranted = false;
+  setStatus('正在启动图卡扫描…浏览器如有提示，请允许使用相机');
   try {
-    await requestCameraPermission();
-    permissionGranted = true;
-    setStatus('相机已允许，正在载入图卡识别…');
-    ({ MindARThree } = await import('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js'));
-    THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
+    // MindAR must own the first and only camera request. On several Android
+    // devices a preliminary getUserMedia probe leaves the camera unavailable
+    // to the tracker even after its tracks are stopped.
+    ({ MindARThree } = await import('mindar-image-three'));
+    THREE = await import('three');
     mindar = new MindARThree({
       container: document.querySelector('#cameraContainer'),
       imageTargetSrc: './assets/turpan-card.mind',
@@ -525,7 +508,7 @@ async function startAR() {
     await setupHandTracking(mindar.video);
   } catch (error) {
     releaseMindARCamera();
-    showCameraError(error, permissionGranted);
+    showCameraError(error, true);
     practiceButton.hidden = false;
   } finally {
     startButton.disabled = false;
