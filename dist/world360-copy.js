@@ -5,21 +5,32 @@ export const copy = {
   gateTitle: {
     zh: '让绿洲在身边展开', fr: 'L’oasis prend vie autour de vous', en: 'Let the oasis unfold around you',
   },
+  gateNoFloor: {
+    zh: '无法检测地面，请点击下方按钮',
+    fr: 'Détection du sol indisponible. Appuyez ci-dessous.',
+    en: 'Floor tracking unavailable. Tap the button below.',
+  },
+  gateCameraFailed: {
+    zh: '相机未能开启', fr: 'La caméra ne démarre pas', en: 'The camera could not start',
+  },
   gateIntro: {
-    zh: '先用眼睛确认地面平坦、周围没有障碍，再把镜头缓缓对向地面。场景出现后请站在原地转身观看。',
-    fr: 'Vérifiez d’abord que le sol est plat et que l’espace autour de vous est libre. Orientez ensuite lentement la caméra vers le sol. Restez sur place pour explorer la scène.',
-    en: 'First check that the ground is level and the space around you is clear. Then slowly point the camera at the ground. Stay in one place while exploring the scene.',
+    zh: '若设备支持地面定位，请将镜头缓缓对向平坦地面。',
+    fr: 'Si votre appareil le permet, orientez la caméra vers un sol plat.',
+    en: 'If your device supports it, slowly aim the camera at level ground.',
   },
   gateWarning: {
-    zh: '远离楼梯、阳台或悬崖边缘、道路和水边。手机可能看不到障碍或落差，画面不能代替你观察真实环境。',
-    fr: 'Éloignez-vous des escaliers, des rebords, des routes et de l’eau. Le téléphone peut manquer un obstacle ou une dénivellation. Regardez aussi autour de vous.',
-    en: 'Keep away from stairs, edges, roads and water. Your phone may miss obstacles or drops. Keep checking your real surroundings.',
+    zh: '先确认周围平坦、无障碍，远离楼梯、道路和水边；只在原地转身。',
+    fr: 'Vérifiez que l’espace est plat et libre. Évitez escaliers, routes et eau ; restez sur place.',
+    en: 'Check that the area is level and clear. Keep away from stairs, roads and water; stay in place.',
   },
   floorButton: {
     zh: '识别地面并放置场景', fr: 'Repérer le sol et placer la scène', en: 'Find the floor and place the scene',
   },
   compassButton: {
-    zh: '原地环视（不定位地面）', fr: 'Explorer sur place (sans ancrage au sol)', en: 'Look around in place (no floor anchor)',
+    zh: '进入原地环视', fr: 'Explorer sur place', en: 'Look around in place',
+  },
+  retryCamera: {
+    zh: '重试相机', fr: 'Réessayer la caméra', en: 'Retry camera',
   },
   safety: {
     zh: '只在平坦空旷处原地转身，随时抬头看路',
@@ -150,16 +161,6 @@ export const copy = {
     zh: '本地预览，无地面定位',
     fr: 'Aperçu local, sans ancrage au sol',
     en: 'Local preview, without a floor anchor',
-  },
-  portalIntro: {
-    zh: '进入下一步后，请先肉眼确认周围安全，再将镜头对准平坦地面。',
-    fr: 'Vérifiez votre sécurité avant d’entrer. Visez ensuite un sol plat avec la caméra.',
-    en: 'Check your surroundings before entering. Then aim the camera at level ground.',
-  },
-  portalButton: {
-    zh: '寻找地面，展开 360° 绿洲',
-    fr: 'Ouvrir l’oasis à 360°',
-    en: 'Open the 360° oasis',
   },
 };
 

@@ -35,15 +35,15 @@ const routes = [
 ];
 
 const labels = {
-  target: { zh: '第 {index}/3 字。靠近并对准发光的偏旁；捏住或点“抓取”', fr: 'Caractère {index}/3. Visez une forme lumineuse. Pincez pour la saisir ou touchez « Saisir ».', en: 'Character {index}/3. Aim at a glowing piece. Pinch to grab it or tap Grab.' },
-  hold: { zh: '已抓住：移向另一枚偏旁，靠近后自动融合', fr: 'Pièce saisie : rapprochez-la d’une autre pour les assembler.', en: 'Piece held: bring it close to another piece to join them.' },
+  target: { zh: '第 {index}/3 字。对准偏旁，捏合抓取。', fr: 'Caractère {index}/3. Visez un élément et pincez.', en: 'Character {index}/3. Aim at a piece and pinch.' },
+  hold: { zh: '移近另一枚偏旁，自动组合。', fr: 'Rapprochez-le d’un autre élément.', en: 'Move it close to another piece.' },
   progress: { zh: '已组合 {parts}/{total} 个部件，还剩 {remaining} 个字', fr: '{parts}/{total} éléments assemblés ; {remaining} caractères à découvrir', en: '{parts}/{total} pieces joined; {remaining} characters left' },
   done: { zh: '「{word}」组成了，本境还剩 {remaining} 个字', fr: '« {word} » est formé ; encore {remaining} caractères dans ce monde', en: '“{word}” is complete; {remaining} characters remain in this realm' },
   allDone: { zh: '本境的三个字都完成了，可选择下一境', fr: 'Les trois caractères sont terminés. Choisissez le monde suivant.', en: 'All three characters are complete. Choose the next realm.' },
   grab: { zh: '抓取', fr: 'Saisir', en: 'Grab' },
   release: { zh: '放下', fr: 'Déposer', en: 'Release' },
   next: { zh: '寻找下一个字', fr: 'Caractère suivant', en: 'Next character' },
-  near: { zh: '字形离镜头较远；原地转身，把镜头对准它', fr: 'La forme est plus loin. Tournez sur place pour la viser.', en: 'The piece is farther away. Turn in place to aim at it.' },
+  near: { zh: '原地转身，将镜头对准偏旁。', fr: 'Tournez sur place pour viser un élément.', en: 'Turn in place to aim at a piece.' },
 };
 
 function localize(template, values = {}) {

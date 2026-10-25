@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#173d4a" />
     <title>汉字图卡 AR</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
-    <link rel="stylesheet" href="./styles.css?v=12" />
+    <link rel="stylesheet" href="./styles.css?v=13" />
     <script type="importmap">
       {
         "imports": {
@@ -22,7 +22,7 @@
       <section id="welcome" class="panel welcome">
         <p class="eyebrow">汉字图卡，Web AR</p>
         <h1>抓偏旁，组汉字</h1>
-        <p>扫描吐鲁番图卡后，可以进入 360° 绿洲场景。支持地面定位的设备可把场景放在地面；其他手机可站在原地环视。图卡画面中仍可用手势抓取偏旁组字。</p>
+        <p>扫描吐鲁番图卡后，直接进入 360° 绿洲。支持地面定位的设备可把场景放在地面；其他手机可站在原地环视并组字。</p>
         <button id="startButton" class="primary">开始相机游戏</button>
         <button id="practiceButton" class="secondary">先试玩（不用图卡）</button>
         <small>首次扫码后请允许相机；此后扫描图卡角落的二维码即可直接开始。</small>
@@ -35,13 +35,6 @@
         <div id="status" role="status">正在准备相机…</div>
         <button id="handMode" class="hand-mode" type="button">左手持机，右手抓取</button>
         <button id="retryCamera" class="retry-camera" hidden>重新开启相机</button>
-        <div id="worldPortal" class="world-portal" hidden>
-          <strong>图卡已识别，绿洲入口开启</strong>
-          <div class="portal-language" role="group" aria-label="解说语言"><button id="portalFrench" type="button" aria-pressed="true">FR</button><button id="portalEnglish" type="button" aria-pressed="false">EN</button></div>
-          <span id="portalIntro"><b class="foreign-copy"></b><b class="zh-copy"></b></span>
-          <button id="enterWorld" type="button"><b class="foreign-copy"></b><b class="zh-copy"></b></button>
-          <small>当前组字游戏仍可在图卡画面中继续。</small>
-        </div>
         <div id="handCursor" aria-hidden="true"></div>
         <section id="lesson" class="lesson" aria-label="组字区域">
           <div class="lesson-head"><span id="stageTitle">扫描图卡以唤醒绿洲</span><span id="gestureState">扫描成功后会出现真实手势抓取</span></div>
@@ -56,6 +49,6 @@
         <button id="againButton" class="primary">再玩一次</button>
       </section>
     </main>
-    <script type="module" src="./app.js?v=22"></script>
+    <script type="module" src="./app.js?v=23"></script>
   </body>
 </html>

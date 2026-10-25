@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#123744" />
     <title>立体绿洲，汉字图卡</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
-    <link rel="stylesheet" href="./world360.css?v=3" />
+    <link rel="stylesheet" href="./world360.css?v=6" />
     <script type="importmap">
       { "imports": { "three": "./vendor/three.module.js" } }
     </script>
@@ -17,8 +17,9 @@
     <canvas id="voxelReveal" aria-hidden="true"></canvas>
 
     <header class="topbar">
-      <div class="realm-heading"><span id="realmIndex" class="realm-index">一</span><div class="realm-text"><strong id="realmName">初醒藤影</strong><span id="realmTranslation" class="realm-translation" lang="fr">Ombres de vigne à l’aube</span></div></div>
+      <div class="realm-heading"><span id="realmIndex" class="realm-index">一</span><strong id="realmName">初醒藤影</strong></div>
       <div class="topbar-actions"><div class="language-switch" role="group" aria-label="解说语言"><button id="languageFr" type="button" aria-pressed="true">FR</button><button id="languageEn" type="button" aria-pressed="false">EN</button></div><a id="backLink" href="./index.html" aria-label="主菜单">Menu principal</a></div>
+      <span id="realmTranslation" class="realm-translation" lang="fr">Ombres de vigne à l’aube</span>
     </header>
 
     <div id="floorReticle" class="floor-reticle" hidden aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -30,10 +31,10 @@
       <span class="gate-mark">✦</span>
       <h1 id="gateTitle"><span class="zh-copy"></span><span class="foreign-copy"></span></h1>
       <p id="gateIntro"><span class="foreign-copy"></span><span class="zh-copy"></span></p>
-      <p id="gateWarning" class="safety-note"><span class="foreign-copy"></span><span class="zh-copy"></span></p>
       <button id="startFloor" class="primary" type="button" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></button>
       <button id="startCompass" class="secondary" type="button"><span class="foreign-copy"></span><span class="zh-copy"></span></button>
-      <div id="capabilityNote" class="capability-note"><span class="foreign-copy"></span><span class="zh-copy"></span></div>
+      <p id="gateWarning" class="safety-note"><span class="foreign-copy"></span><span class="zh-copy"></span></p>
+      <div id="capabilityNote" class="capability-note" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></div>
     </section>
 
     <div id="realmNarration" class="realm-narration" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></div>
@@ -45,6 +46,6 @@
     </section>
     <div id="gameExplainer" class="game-explainer" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></div>
     <nav id="realmNav" class="realm-nav" aria-label="预览六境" hidden></nav>
-    <script type="module" src="./world360.js?v=5"></script>
+    <script type="module" src="./world360.js?v=6"></script>
   </body>
 </html>

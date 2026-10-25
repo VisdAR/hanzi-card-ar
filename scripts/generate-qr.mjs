@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import QRCode from 'qrcode';
 
-const playUrl = 'https://visdar.github.io/hanzi-card-ar/?play=1';
+const playUrl = 'https://visdar.github.io/hanzi-card-ar/?play=1&v=6';
 const svg = await QRCode.toString(playUrl, {
   type: 'svg',
   errorCorrectionLevel: 'H',

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { copy, realmNarration, realmTitles, preferredLanguage, saveLanguage } from './world360-copy.js?v=5';
-import { createSpatialGame } from './world360-game.js?v=5';
+import { copy, realmNarration, realmTitles, preferredLanguage, saveLanguage } from './world360-copy.js?v=6';
+import { createSpatialGame } from './world360-game.js?v=6';
 
 const scanAt = Number(sessionStorage.getItem('hanzi-world-scan') || 0);
 const localPreview = ['localhost', '127.0.0.1'].includes(location.hostname) &&
@@ -57,6 +57,17 @@ function pair(element, entry) {
   }
 }
 
+function refreshGate() {
+  const unavailable = ['capabilityNoXR', 'capabilityUnsupported', 'capabilityPermission', 'capabilityFailed'].includes(capabilityKey);
+  ui.gate.classList.toggle('no-floor', unavailable);
+  ui.gateIntro.hidden = unavailable;
+  ui.floorButton.hidden = unavailable || capabilityKey !== 'capabilityXR';
+  ui.capability.hidden = capabilityKey !== 'cameraFailed';
+  pair(ui.gateTitle, copy[capabilityKey === 'cameraFailed' ? 'gateCameraFailed' : unavailable ? 'gateNoFloor' : 'gateTitle']);
+  pair(ui.compassButton, copy[capabilityKey === 'cameraFailed' ? 'retryCamera' : 'compassButton']);
+  pair(ui.capability, copy[capabilityKey]);
+}
+
 function refreshLanguage() {
   document.documentElement.lang = 'zh-CN';
   ui.languageFr.setAttribute('aria-pressed', String(language === 'fr'));
@@ -65,26 +76,26 @@ function refreshLanguage() {
   ui.realmTranslation.lang = language;
   ui.backLink.textContent = copy.back[language];
   ui.backLink.setAttribute('aria-label', copy.back[language]);
-  pair(ui.gateTitle, copy.gateTitle);
+  refreshGate();
   pair(ui.gateIntro, copy.gateIntro);
   pair(ui.gateWarning, copy.gateWarning);
   pair(ui.floorButton, copy.floorButton);
-  pair(ui.compassButton, copy.compassButton);
   pair(ui.safety, copy.safety);
-  pair(ui.capability, copy[capabilityKey]);
   pair(ui.status, copy[statusKey]);
   pair(ui.badge, copy[modeKey]);
   pair(ui.narration, realmNarration[realm - 1]);
   game?.refreshLanguage();
 }
 
-function setCapability(key) { capabilityKey = key; pair(ui.capability, copy[key]); }
+function setCapability(key) { capabilityKey = key; refreshGate(); }
 function setMode(key) { modeKey = key; pair(ui.badge, copy[key]); }
 function setGateVisible(visible) {
   ui.gate.hidden = !visible;
-  ui.status.hidden = visible;
+  ui.status.hidden = visible || !!world?.visible;
   ui.interaction.hidden = visible || !world?.visible;
-  ui.narration.hidden = visible || !world?.visible;
+  ui.narration.hidden = true;
+  ui.safety.hidden = true;
+  ui.badge.hidden = true;
   ui.gameReticle.hidden = visible || !world?.visible;
   if (visible) ui.handPointer.hidden = true;
   if (visible) ui.explainer.hidden = true;
@@ -121,10 +132,15 @@ let dragStart = null;
 let particles;
 let contactShadowTexture;
 let game;
+let narrationTimer;
 const propSprites = new Map();
 const textureCache = new Map();
 
-function status(key) { statusKey = copy[key] ? key : 'sceneFailed'; pair(ui.status, copy[statusKey]); }
+function status(key) {
+  statusKey = copy[key] ? key : 'sceneFailed';
+  pair(ui.status, copy[statusKey]);
+  ui.status.hidden = !ui.gate.hidden || !!world?.visible;
+}
 
 function loadTexture(url) {
   if (!textureCache.has(url)) {
@@ -278,6 +294,7 @@ async function selectRealm(number) {
   ui.realmTranslation.textContent = realmTitles[number - 1][language];
   ui.realmTranslation.lang = language;
   pair(ui.narration, realmNarration[number - 1]);
+  if (world?.visible) showNarration();
   for (const button of ui.realmNav.querySelectorAll('button')) {
     button.setAttribute('aria-current', button.dataset.realm === String(number) ? 'true' : 'false');
   }
@@ -354,9 +371,15 @@ function beginReveal() {
   revealTime = performance.now();
   ui.reticle.hidden = true;
   setGateVisible(false);
+  showNarration();
   ui.realmNav.hidden = false;
-  ui.badge.hidden = false;
   ui.gameReticle.hidden = false;
+}
+
+function showNarration() {
+  clearTimeout(narrationTimer);
+  ui.narration.hidden = false;
+  narrationTimer = setTimeout(() => { ui.narration.hidden = true; }, 3800);
 }
 
 function animate(time, frame) {
@@ -440,7 +463,6 @@ async function startFloor() {
       setGateVisible(true);
       ui.reticle.hidden = true;
       ui.realmNav.hidden = true;
-      ui.badge.hidden = true;
       game?.stopHands();
       status('xrEnded');
     }, { once: true });
@@ -551,7 +573,6 @@ function stopCompass() {
   game?.stopHands();
   setGateVisible(true);
   ui.realmNav.hidden = true;
-  ui.badge.hidden = true;
 }
 
 function pointerDown(event) {
@@ -569,6 +590,11 @@ function pointerMove(event) {
 
 async function bootstrap() {
   if (localPreview) {
+    if (new URLSearchParams(location.search).get('gate') === '1') {
+      setCapability('capabilityNoXR');
+      status('ready');
+      return;
+    }
     try {
       await ensureScene();
       mode = 'preview';

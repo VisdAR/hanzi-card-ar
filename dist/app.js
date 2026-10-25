@@ -1,5 +1,4 @@
 import { createOasis, makeGlyphSprite, changeGlyph } from './oasis3d.js';
-import { copy, preferredLanguage, saveLanguage } from './world360-copy.js?v=5';
 
 // Each realm selects three word missions. 葡萄 and 萌芽 require two glyphs each.
 const hskWords = {
@@ -111,23 +110,6 @@ const handModeButton = document.querySelector('#handMode');
 const completeHeading = document.querySelector('#complete h1');
 const completeText = document.querySelector('#complete p:not(.eyebrow)');
 const sceneCaption = document.querySelector('#sceneCaption');
-const worldPortal = document.querySelector('#worldPortal');
-const enterWorld = document.querySelector('#enterWorld');
-const portalFrench = document.querySelector('#portalFrench');
-const portalEnglish = document.querySelector('#portalEnglish');
-const portalIntro = document.querySelector('#portalIntro');
-let portalTranslation = preferredLanguage();
-
-function refreshPortalLanguage() {
-  portalFrench.setAttribute('aria-pressed', String(portalTranslation === 'fr'));
-  portalEnglish.setAttribute('aria-pressed', String(portalTranslation === 'en'));
-  for (const [element, entry] of [[portalIntro, copy.portalIntro], [enterWorld, copy.portalButton]]) {
-    element.querySelector('.foreign-copy').textContent = entry[portalTranslation];
-    element.querySelector('.foreign-copy').lang = portalTranslation;
-    element.querySelector('.zh-copy').textContent = entry.zh;
-  }
-}
-
 let levelIndex = 0;
 let glyphIndex = 0;
 let active = null;
@@ -141,6 +123,7 @@ let completing = false;
 let completionTimeout = 0;
 let foundTarget = false;
 let scanConfirmed = false;
+let openingWorld = false;
 let practiceMode = false;
 let handLandmarker = null;
 let lastVideoTime = -1;
@@ -213,7 +196,7 @@ function showCameraError(error, afterCameraAttempt) {
   } else if (error?.name === 'NotFoundError') {
     setStatus('没有找到可用相机，请关闭占用相机的应用后重试');
   } else if (afterCameraAttempt) {
-    setStatus(`图卡扫描未启动（${error?.message || error?.name || '未知原因'}）。已改为一次性启动相机，请点下方按钮重试`);
+    setStatus(`图卡扫描未启动（${error?.message || error?.name || '未知原因'}），请点“重新开启相机”再试`);
   } else {
     setStatus('相机启动失败，请点“重新开启相机”再试');
   }
@@ -591,9 +574,9 @@ async function startAR() {
   active = null;
   practiceMode = false;
   scanConfirmed = false;
+  openingWorld = false;
   foundTarget = false;
-  worldPortal.hidden = true;
-  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom', 'world-ready');
+  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom');
   releaseMindARCamera();
   fallbackStream?.getTracks().forEach((track) => track.stop());
   fallbackStream = null;
@@ -620,51 +603,22 @@ async function startAR() {
     const { renderer, scene, camera } = mindar;
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     scene.add(camera);
-    const oasis = createOasis(THREE, { scenery: false });
     const anchor = mindar.addAnchor(0);
-    anchor.group.add(oasis.root);
-    arRuntime = { scene, camera, renderer, oasis, anchor, mode: 'marker' };
+    arRuntime = { scene, camera, renderer, anchor, mode: 'marker' };
     anchor.onTargetFound = () => {
-      foundTarget = true;
-      const isFirstScan = !scanConfirmed;
-      scanConfirmed = true;
-      worldPortal.hidden = false;
-      arView.classList.add('world-ready');
-      arView.classList.add('found', 'scanned');
-      arView.classList.remove('story-mode');
-      if (isFirstScan) {
-        createLevel();
-        setStatus('图卡已识别：绿洲入口开启。捏住一枚字形，移近另一枚');
-        gestureState.textContent = '手心或手背均可；让整只抓取手出现在镜头里';
-      } else {
-        setStatus('图卡重新校准完成：继续在绿洲中抓取偏旁');
-      }
+      if (openingWorld) return;
+      openingWorld = true;
+      sessionStorage.setItem('hanzi-world-scan', String(Date.now()));
+      setStatus('图卡已识别，正在进入绿洲…');
+      window.location.replace('./world360.html?v=6');
     };
     anchor.onTargetLost = () => {
-      foundTarget = false;
-      arView.classList.remove('found', 'scanned', 'story-mode');
-      cursor.style.opacity = '0';
-      pinchHeld = false;
-      pinchReleaseStartedAt = 0;
-      if (active) release();
-      if (scanConfirmed) {
-        setStatus('图卡离开镜头，场景已暂停；请重新对准图卡继续组字');
-      } else {
-        setStatus('请将吐鲁番图卡完整放进镜头');
-      }
+      if (!openingWorld) setStatus('请将吐鲁番图卡完整放进镜头');
     };
-    const markerLight = new THREE.HemisphereLight(0xf9f0dc, 0x335d61, 2.0);
-    scene.add(markerLight);
-    const sunlight = new THREE.DirectionalLight(0xffdfb0, 1.6);
-    sunlight.position.set(-0.7, 1.2, 1.5);
-    scene.add(sunlight);
     await mindar.start();
-    renderer.setAnimationLoop((time) => {
-      oasis.update(time);
-      renderer.render(scene, camera);
-    });
-    setStatus('请将吐鲁番图卡完整放进镜头；识别成功后才会出现偏旁');
-    await setupHandTracking(mindar.video);
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
+    if (!openingWorld) setStatus('请将吐鲁番图卡完整放进镜头，识别后自动进入绿洲');
+    // Hand tracking starts only in the destination scene, after the card opens it.
   } catch (error) {
     arRuntime?.renderer.setAnimationLoop(null);
     arRuntime?.renderer.dispose();
@@ -727,9 +681,8 @@ function stopGame() {
   fallbackStream = null;
   document.querySelector('#cameraContainer').replaceChildren();
   arView.style.display = 'none';
-  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom', 'world-ready');
+  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom');
   scanConfirmed = false;
-  worldPortal.hidden = true;
   practiceMode = false;
   foundTarget = false;
   cursor.style.opacity = '0';
@@ -741,20 +694,6 @@ practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
 againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; glyphIndex = 0; levels = createCampaign(); welcome.hidden = false; });
 retryCamera.addEventListener('click', startAR);
-enterWorld.addEventListener('click', () => {
-  if (!scanConfirmed) return;
-  sessionStorage.setItem('hanzi-world-scan', String(Date.now()));
-  stopGame();
-  window.location.assign('./world360.html?v=5');
-});
-for (const [button, choice] of [[portalFrench, 'fr'], [portalEnglish, 'en']]) {
-  button.addEventListener('click', () => {
-    portalTranslation = choice;
-    saveLanguage(portalTranslation);
-    refreshPortalLanguage();
-  });
-}
-refreshPortalLanguage();
 handModeButton.addEventListener('click', () => {
   playingHand = playingHand === 'right' ? 'left' : 'right';
   localStorage.setItem('hanzi-playing-hand', playingHand);
