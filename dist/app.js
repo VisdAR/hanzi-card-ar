@@ -1,5 +1,6 @@
-// Formal six-stage curriculum. Each stage selects three words at random; HSK 2
-// has only one new grass-radical word in this pilot list, so it mixes reviews.
+// Single-character prototype: each realm selects three entries at random.
+// Two-character missions (葡萄、萌芽) are specified for the full game but are not
+// represented as completed word missions by this prototype.
 const hskWords = {
   1: [
     { word: '茶', pinyin: 'chá', radicals: ['艹', '人', '木'] },
@@ -13,23 +14,43 @@ const hskWords = {
     { word: '草', pinyin: 'cǎo', radicals: ['艹', '早'] },
     { word: '花', pinyin: 'huā', radicals: ['艹', '化'] },
     { word: '蓝', pinyin: 'lán', radicals: ['艹', '监'] },
+    { word: '节', pinyin: 'jié', radicals: ['艹', '卩'] },
   ],
   4: [
-    { word: '落', pinyin: 'luò', radicals: ['艹', '氵', '各'] },
     { word: '苦', pinyin: 'kǔ', radicals: ['艹', '古'] },
-    { word: '获', pinyin: 'huò', radicals: ['艹', '犭', '又'] },
+    { word: '获', pinyin: 'huò', radicals: ['艹', '犭', '犬'] },
+    { word: '艺', pinyin: 'yì', radicals: ['艹', '乙'] },
+    { word: '著', pinyin: 'zhù', radicals: ['艹', '者'] },
   ],
   5: [
+    { word: '落', pinyin: 'luò', radicals: ['艹', '氵', '各'] },
     { word: '苗', pinyin: 'miáo', radicals: ['艹', '田'] },
-    { word: '荣', pinyin: 'róng', radicals: ['艹', '冖', '木'] },
     { word: '蔬', pinyin: 'shū', radicals: ['艹', '疏'] },
+    { word: '英', pinyin: 'yīng', radicals: ['艹', '央'] },
+    { word: '营', pinyin: 'yíng', radicals: ['艹', '冖', '吕'] },
   ],
   6: [
-    { word: '蕾', pinyin: 'lěi', radicals: ['艹', '雨', '田'] },
-    { word: '芽', pinyin: 'yá', radicals: ['艹', '牙'] },
     { word: '萌', pinyin: 'méng', radicals: ['艹', '明'] },
+    { word: '茂', pinyin: 'mào', radicals: ['艹', '戊'] },
+    { word: '蒸', pinyin: 'zhēng', radicals: ['艹', '丞', '灬'] },
+    { word: '荒', pinyin: 'huāng', radicals: ['艹', '巟'] },
+    { word: '茎', pinyin: 'jīng', radicals: ['艹', '圣'] },
   ],
 };
+
+// Curriculum source levels stay internal. Players progress through story realms.
+const realmNames = {
+  1: '初醒藤影',
+  2: '寻泉药径',
+  3: '繁花藤廊',
+  4: '越岭古道',
+  5: '暮市丰年',
+  6: '星泉新生',
+};
+
+function realmTitle(level) {
+  return `第${level.hsk}境·${realmNames[level.hsk]}`;
+}
 
 function shuffled(words) {
   return [...words].sort(() => Math.random() - 0.5);
@@ -126,15 +147,7 @@ function setSceneCaption(message) { sceneCaption.textContent = message; }
 
 function sceneMessage(level, complete = false) {
   if (complete) return `「${level.word}」已成 · 绿洲回应了你的文字`;
-  const messages = {
-    1: `初学绿洲 · 找到「${level.word}」的偏旁`,
-    2: `香草小径 · 找到「${level.word}」的偏旁`,
-    3: `花影庭院 · 找到「${level.word}」的偏旁`,
-    4: `风沙古道 · 找到「${level.word}」的偏旁`,
-    5: `苗圃月色 · 找到「${level.word}」的偏旁`,
-    6: `蕾光秘境 · 找到「${level.word}」的偏旁`,
-  };
-  return messages[level.hsk];
+  return `${realmNames[level.hsk]} · 找到「${level.word}」的构字部件`;
 }
 
 function playChime() {
@@ -213,7 +226,7 @@ function createLevel() {
   radialNodes = [];
   const level = currentLevel();
   arView.dataset.hsk = level.hsk;
-  stageTitle.textContent = `HSK ${level.hsk} · 第 ${level.stageIndex}/3 字 · 组出「${level.word}」`;
+  stageTitle.textContent = `${realmTitle(level)} · 第 ${level.stageIndex}/3 字 · 组出「${level.word}」`;
   setSceneCaption(sceneMessage(level));
   level.radicals.forEach((radical, index) => {
     const slot = document.createElement('div');
@@ -299,14 +312,14 @@ function advanceLevel() {
   levelIndex += 1;
   if (levelIndex >= levels.length) {
     stopGame();
-    completeHeading.textContent = '六级绿洲完成';
-    completeText.textContent = '你完成了 HSK 1–6 的 18 个随机草字头组字挑战。';
+    completeHeading.textContent = '六境绿洲完成';
+    completeText.textContent = '你完成了 18 个随机草字头组字挑战。';
     complete.hidden = false;
     return;
   }
   createLevel();
   const level = currentLevel();
-  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '绿洲已唤醒') + ` · HSK ${level.hsk} 第 ${level.stageIndex}/3 字：捏合偏旁来组字`);
+  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '绿洲已唤醒') + ` · ${realmTitle(level)} 第 ${level.stageIndex}/3 字：捏合部件来组字`);
 }
 
 async function setupHandTracking(video) {
