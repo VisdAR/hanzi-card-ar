@@ -162,7 +162,10 @@ async function loadProp(prop) {
   const texture = await loadTexture(`./assets/oasis/${prop.file}`);
   const height = propHeights[prop.id] || 1.1;
   const aspect = texture.image.width / texture.image.height;
-  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, opacity: 0 });
+  const material = new THREE.SpriteMaterial({
+    map: texture, transparent: true, depthWrite: false, opacity: 0,
+    alphaTest: prop.id === 'grapes' ? 0.16 : 0,
+  });
   const sprite = new THREE.Sprite(material);
   const yaw = deg(prop.yawDegrees || 0);
   const radius = propRadii[prop.id] || 2.8;
@@ -237,7 +240,7 @@ function buildRealmNav() {
 async function ensureScene() {
   initializeScene();
   if (!manifest) {
-    const response = await fetch('./assets/oasis/scene-manifest.json');
+    const response = await fetch('./assets/oasis/scene-manifest.json?v=3');
     if (!response.ok) throw new Error('场景目录加载失败');
     manifest = await response.json();
     buildRealmNav();
@@ -291,11 +294,9 @@ function animate(time, frame) {
   }
   if (world.visible) {
     const seconds = time / 1000;
+    // Architectural props stay attached to the floor; only water and dust move.
     for (const sprite of propSprites.values()) {
-      const { id, baseY } = sprite.userData;
-      if (id === 'grapes' || id === 'flowerTrellis') {
-        sprite.position.y = baseY + Math.sin(seconds * 0.9 + (id === 'grapes' ? 0 : 1.4)) * 0.018;
-      }
+      const { id } = sprite.userData;
       if (id === 'canal') {
         const isFeatured = manifest.realms[realm - 1].newProps.includes(id);
         sprite.material.opacity = (isFeatured ? 0.92 : 0.56) * worldFade * (0.95 + 0.05 * Math.sin(seconds * 2.3));

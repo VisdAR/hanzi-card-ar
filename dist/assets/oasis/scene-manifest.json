@@ -12,7 +12,7 @@
   "props": [
     { "id": "mountains", "file": "mountains.webp", "use": "image-target-far-depth" },
     { "id": "village", "file": "village.webp", "yawDegrees": 8, "visibleFromRealm": 1 },
-    { "id": "grapes", "file": "grapes.webp", "yawDegrees": -42, "visibleFromRealm": 1 },
+    { "id": "grapes", "file": "grapes-arch.webp", "yawDegrees": -35, "visibleFromRealm": 1 },
     { "id": "canal", "file": "canal.webp", "yawDegrees": -8, "visibleFromRealm": 1 },
     { "id": "herbStation", "file": "herb-station.webp", "yawDegrees": 38, "visibleFromRealm": 2 },
     { "id": "flowerTrellis", "file": "flower-trellis.webp", "yawDegrees": -66, "visibleFromRealm": 3 },

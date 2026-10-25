@@ -3,7 +3,7 @@
 ## 已备素材
 
 - `dist/assets/oasis/panorama/day.webp` 与 `night.webp`：同一虚构绿洲的日夜 2:1 全景远景。六境沿用相同山脊、村落与水渠位置，前三境逐渐增加植被，第四、五境转暖，最后一境切换夜景。
-- `dist/assets/oasis/*.webp`：有透明背景的山、村屋、葡萄藤、浅水土渠、草药引水台、花藤廊、红岩小道、丰收篮与新芽。配置见 `dist/assets/oasis/scene-manifest.json`。旧版过亮的“瀑布水渠”已从游戏素材中替换，留在 Seagate 的 `HanziOasisArt/rejected` 供回看。
+- `dist/assets/oasis/*.webp`：有透明背景的山、村屋、完整双支柱葡萄廊架、浅水土渠、草药引水台、花藤廊、红岩小道、丰收篮与新芽。配置见 `dist/assets/oasis/scene-manifest.json`。旧版过亮的“瀑布水渠”已从游戏素材中替换，留在 Seagate 的 `HanziOasisArt/rejected` 供回看。
 - `dist/assets/glyphs/`：当前题库所需的 32 个构字部件和 25 个成字字形，共 57 个独立透明 WebP，以及单张 `atlas.webp`。`manifest.json` 给出字符到文件及图集格位的映射。没有黄色底板。
 - 高清生成原图放在 `/Volumes/Seagate1TB/HanziOasisArt/source/`，场景总览在 `/Volumes/Seagate1TB/HanziOasisArt/review/scene-contact-sheet.jpg`，字形总览在 `/Volumes/Seagate1TB/HanziOasisArt/review/glyph-contact-sheet.png`。网页仓库只保留压缩资源。
 
