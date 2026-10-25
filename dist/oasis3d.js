@@ -1,7 +1,12 @@
 // Lightweight, procedural Three.js oasis. The printed picture gives the first
 // pose; all of these meshes live in real 3D coordinates, not CSS layers.
-export function createOasis(THREE) {
+export function createOasis(THREE, { scenery = true } = {}) {
   const root = new THREE.Group();
+  // The card game now uses the photographic 360° world for its scenery.
+  // Keep this anchor for the glyphs without showing the superseded block models.
+  if (!scenery) return {
+    root, eggs: [], setRealm() {}, update() {}, bloom() {}, revealEgg() { return null; },
+  };
   const animated = [];
   const realmMaterials = [];
   const makeMat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.84, ...extra });

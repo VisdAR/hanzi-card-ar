@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { copy, realmNarration, preferredLanguage, saveLanguage } from './world360-copy.js';
+import { createSpatialGame } from './world360-game.js';
 
 const scanAt = Number(sessionStorage.getItem('hanzi-world-scan') || 0);
 const localPreview = ['localhost', '127.0.0.1'].includes(location.hostname) &&
@@ -21,7 +23,65 @@ const ui = {
   safety: document.querySelector('#safetyBadge'),
   realmName: document.querySelector('#realmName'),
   realmNav: document.querySelector('#realmNav'),
+  languageToggle: document.querySelector('#languageToggle'),
+  gateTitle: document.querySelector('#gateTitle'),
+  gateIntro: document.querySelector('#gateIntro'),
+  gateWarning: document.querySelector('#gateWarning'),
+  backLink: document.querySelector('#backLink'),
+  narration: document.querySelector('#realmNarration'),
+  interaction: document.querySelector('#interactionPanel'),
+  hint: document.querySelector('#gameHint'),
+  explainer: document.querySelector('#gameExplainer'),
+  grab: document.querySelector('#grabButton'),
+  next: document.querySelector('#nextWord'),
+  gameReticle: document.querySelector('#gameReticle'),
+  handPointer: document.querySelector('#handPointer'),
 };
+let language = preferredLanguage();
+let statusKey = 'preparing';
+let capabilityKey = 'capabilityChecking';
+let modeKey = 'modeCompass';
+
+function pair(element, entry) {
+  if (!element || !entry) return;
+  const zh = element.querySelector('.zh-copy');
+  const foreign = element.querySelector('.foreign-copy');
+  if (zh) zh.textContent = entry.zh;
+  if (foreign) {
+    foreign.lang = language;
+    foreign.textContent = entry[language];
+  }
+}
+
+function refreshLanguage() {
+  document.documentElement.lang = 'zh-CN';
+  ui.languageToggle.textContent = language === 'fr' ? 'FR / EN' : 'EN / FR';
+  ui.languageToggle.setAttribute('aria-label', language === 'fr' ? 'English translation' : 'Traduction française');
+  ui.backLink.textContent = copy.back[language];
+  pair(ui.gateTitle, copy.gateTitle);
+  pair(ui.gateIntro, copy.gateIntro);
+  pair(ui.gateWarning, copy.gateWarning);
+  pair(ui.floorButton, copy.floorButton);
+  pair(ui.compassButton, copy.compassButton);
+  pair(ui.safety, copy.safety);
+  pair(ui.capability, copy[capabilityKey]);
+  pair(ui.status, copy[statusKey]);
+  pair(ui.badge, copy[modeKey]);
+  pair(ui.narration, realmNarration[realm - 1]);
+  game?.refreshLanguage();
+}
+
+function setCapability(key) { capabilityKey = key; pair(ui.capability, copy[key]); }
+function setMode(key) { modeKey = key; pair(ui.badge, copy[key]); }
+function setGateVisible(visible) {
+  ui.gate.hidden = !visible;
+  ui.status.hidden = visible;
+  ui.interaction.hidden = visible || !world?.visible;
+  ui.narration.hidden = visible || !world?.visible;
+  ui.gameReticle.hidden = visible || !world?.visible;
+  if (visible) ui.handPointer.hidden = true;
+  if (visible) ui.explainer.hidden = true;
+}
 
 const textureLoader = new THREE.TextureLoader();
 const up = new THREE.Vector3(0, 1, 0);
@@ -53,12 +113,11 @@ let manualYaw = 0;
 let dragStart = null;
 let particles;
 let contactShadowTexture;
+let game;
 const propSprites = new Map();
 const textureCache = new Map();
 
-function status(message) {
-  if (ui.status.textContent !== message) ui.status.textContent = message;
-}
+function status(key) { statusKey = copy[key] ? key : 'sceneFailed'; pair(ui.status, copy[statusKey]); }
 
 function loadTexture(url) {
   if (!textureCache.has(url)) {
@@ -110,6 +169,7 @@ function initializeScene() {
   renderer.xr.enabled = true;
   renderer.xr.setReferenceSpaceType('local');
   renderer.domElement.setAttribute('aria-hidden', 'true');
+  renderer.domElement.style.filter = 'saturate(1.55) contrast(1.08)';
   ui.layer.append(renderer.domElement);
   world = new THREE.Group();
   world.visible = false;
@@ -134,6 +194,8 @@ function initializeScene() {
   dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPosition, 3));
   particles = new THREE.Points(dustGeometry, new THREE.PointsMaterial({ color: 0xd8e3bd, size: 0.012, transparent: true, opacity: 0, depthWrite: false }));
   world.add(particles);
+  game = createSpatialGame(THREE, { world, getCamera: () => mode === 'xr' ? renderer.xr.getCamera() : camera,
+    ui, getMode: () => mode, getLanguage: () => language });
   const shadowCanvas = document.createElement('canvas');
   shadowCanvas.width = 128;
   shadowCanvas.height = 128;
@@ -159,7 +221,7 @@ const propRadii = {
 
 async function loadProp(prop) {
   if (propSprites.has(prop.id)) return propSprites.get(prop.id);
-  const texture = await loadTexture(`./assets/oasis/${prop.file}`);
+  const texture = await loadTexture(`./assets/oasis/${prop.file}?v=4`);
   const height = propHeights[prop.id] || 1.1;
   const aspect = texture.image.width / texture.image.height;
   const material = new THREE.SpriteMaterial({
@@ -193,11 +255,11 @@ function setFade(value) {
   particles.material.opacity = 0.48 * worldFade;
   for (const sprite of propSprites.values()) {
     const isFeatured = manifest?.realms[realm - 1]?.newProps.includes(sprite.userData.id);
-    const strength = realm === 1 || isFeatured ? 0.92 : 0.56;
+    const strength = realm === 1 || isFeatured ? 0.72 : 0.44;
     sprite.material.opacity = sprite.visible ? strength * worldFade : 0;
     if (sprite.userData.shadow) {
       sprite.userData.shadow.visible = sprite.visible;
-      sprite.userData.shadow.material.opacity = (isFeatured ? 0.28 : 0.16) * worldFade;
+      sprite.userData.shadow.material.opacity = (isFeatured ? 0.18 : 0.10) * worldFade;
     }
   }
 }
@@ -205,22 +267,24 @@ function setFade(value) {
 async function selectRealm(number) {
   realm = number;
   ui.realmName.textContent = manifest.realms[number - 1].name;
+  pair(ui.narration, realmNarration[number - 1]);
   for (const button of ui.realmNav.querySelectorAll('button')) {
     button.setAttribute('aria-current', button.dataset.realm === String(number) ? 'true' : 'false');
   }
   const needed = manifest.props.filter((prop) => prop.visibleFromRealm && prop.visibleFromRealm <= number);
   await Promise.all(needed.map(loadProp));
   if (number === 6) {
-    panoramaNight ||= await loadTexture('./assets/oasis/panorama/night.webp');
+    panoramaNight ||= await loadTexture('./assets/oasis/panorama/night.webp?v=4');
     panoramaMaterial.map = panoramaNight;
   } else {
-    panoramaDay ||= await loadTexture('./assets/oasis/panorama/day.webp');
+    panoramaDay ||= await loadTexture('./assets/oasis/panorama/day.webp?v=4');
     panoramaMaterial.map = panoramaDay;
   }
   panoramaMaterial.color.set(['#ffffff', '#e4f1e4', '#f3e5ef', '#ffe0c7', '#edcdb3', '#b8d1ea'][number - 1]);
   panoramaMaterial.needsUpdate = true;
   for (const sprite of propSprites.values()) sprite.visible = sprite.userData.visibleFromRealm <= number;
   setFade(worldFade);
+  game?.selectRealm(number);
 }
 
 function buildRealmNav() {
@@ -232,7 +296,7 @@ function buildRealmNav() {
     button.dataset.realm = String(entry.number);
     button.title = entry.name;
     button.setAttribute('aria-label', `预览第${entry.number}境：${entry.name}`);
-    button.addEventListener('click', () => selectRealm(entry.number).catch(() => status('场景素材加载失败，请稍后重试')));
+    button.addEventListener('click', () => selectRealm(entry.number).catch(() => status('sceneFailed')));
     ui.realmNav.append(button);
   }
 }
@@ -240,7 +304,7 @@ function buildRealmNav() {
 async function ensureScene() {
   initializeScene();
   if (!manifest) {
-    const response = await fetch('./assets/oasis/scene-manifest.json?v=3');
+    const response = await fetch('./assets/oasis/scene-manifest.json?v=4');
     if (!response.ok) throw new Error('场景目录加载失败');
     manifest = await response.json();
     buildRealmNav();
@@ -279,9 +343,10 @@ function beginReveal() {
   setFade(0);
   revealTime = performance.now();
   ui.reticle.hidden = true;
-  ui.gate.hidden = true;
+  setGateVisible(false);
   ui.realmNav.hidden = false;
   ui.badge.hidden = false;
+  ui.gameReticle.hidden = false;
 }
 
 function animate(time, frame) {
@@ -299,10 +364,11 @@ function animate(time, frame) {
       const { id } = sprite.userData;
       if (id === 'canal') {
         const isFeatured = manifest.realms[realm - 1].newProps.includes(id);
-        sprite.material.opacity = (isFeatured ? 0.92 : 0.56) * worldFade * (0.95 + 0.05 * Math.sin(seconds * 2.3));
+        sprite.material.opacity = (isFeatured ? 0.72 : 0.44) * worldFade * (0.95 + 0.05 * Math.sin(seconds * 2.3));
       }
     }
     particles.rotation.y = Math.sin(seconds * 0.12) * 0.025;
+    game?.update(time);
   }
   renderer.render(scene, camera);
 }
@@ -315,7 +381,7 @@ function checkFloor(frame) {
   const pose = hit?.getPose(referenceSpace);
   if (!pose || !viewer) {
     stableHits = 0;
-    status('缓慢将镜头对准脚下的平坦地面；不要边走边找');
+    status('lookFloor');
     return;
   }
   const point = pose.transform.position;
@@ -327,23 +393,23 @@ function checkFloor(frame) {
   const looksLikeFloor = Math.abs(normal.dot(up)) > 0.72 && heightBelowPhone > 0.65 && heightBelowPhone < 2.25;
   if (!looksLikeFloor) {
     stableHits = 0;
-    status('找到的可能是墙面或桌面；请对准脚下的平坦地面');
+    status('notFloor');
     return;
   }
   const current = new THREE.Vector3(point.x, point.y, point.z);
   stableHits = lastFloorPoint && lastFloorPoint.distanceTo(current) < 0.22 ? stableHits + 1 : 1;
   lastFloorPoint = current;
-  status('检测到脚下水平面，正在稳定放置；请先肉眼确认安全');
+  status('floorStable');
   if (stableHits < 9) return;
   world.position.set(viewer.transform.position.x, point.y, viewer.transform.position.z);
   beginReveal();
-  status('绿洲已展开。请站在原地慢慢转身，随时抬头确认现实环境');
-  ui.badge.textContent = '设备平面定位 · 仍需肉眼避障';
+  status('xrPlaced');
+  setMode('modeXR');
 }
 
 async function startFloor() {
   ui.floorButton.disabled = true;
-  status('正在启动设备的地面识别…');
+  status('xrStarting');
   try {
     // The session request must happen directly in this button's user gesture.
     const session = await navigator.xr.requestSession('immersive-ar', {
@@ -352,38 +418,46 @@ async function startFloor() {
       domOverlay: { root: document.body },
     });
     xrSession = session;
+    session.addEventListener('select', () => {
+      if (!session.domOverlayState) game?.grabOrRelease();
+    });
     session.addEventListener('end', () => {
       hitSource?.cancel();
       hitSource = null;
       xrSession = null;
       mode = 'idle';
       if (world) world.visible = false;
-      ui.gate.hidden = false;
+      setGateVisible(true);
       ui.reticle.hidden = true;
       ui.realmNav.hidden = true;
       ui.badge.hidden = true;
-      status('地面定位已结束，可重新开始');
+      game?.stopHands();
+      status('xrEnded');
     }, { once: true });
     await ensureScene();
-    basePanoOpacity = 0.26;
+    basePanoOpacity = 0.16;
     world.visible = false;
     setFade(0);
-    ui.gate.hidden = true;
+    setGateVisible(false);
     ui.reticle.hidden = false;
     mode = 'xr';
     await renderer.xr.setSession(session);
     const viewerSpace = await session.requestReferenceSpace('viewer');
     hitSource = await session.requestHitTestSource({ space: viewerSpace });
     renderer.setAnimationLoop(animate);
-    status('缓慢将镜头对准脚下的平坦地面；不要边走边找');
+    status('lookFloor');
   } catch (error) {
     if (xrSession) await xrSession.end().catch(() => {});
     xrSession = null;
     mode = 'idle';
     renderer?.setAnimationLoop(null);
-    ui.gate.hidden = false;
+    setGateVisible(true);
     ui.reticle.hidden = true;
-    status(`此设备未能启动地面定位（${error.name || '设备限制'}）。可选择原地环视。`);
+    if (error.name === 'NotSupportedError') {
+      ui.floorButton.hidden = true;
+      setCapability('capabilityUnsupported');
+    } else if (error.name === 'NotAllowedError') setCapability('capabilityPermission');
+    else setCapability('capabilityFailed');
   } finally {
     ui.floorButton.disabled = false;
   }
@@ -405,14 +479,14 @@ function onOrientation(event) {
   if (compassZero === null) {
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(orientation);
     compassZero = Math.atan2(-forward.x, -forward.z);
-    ui.badge.textContent = '原地环视 · 无地面定位';
+    setMode('modeCompass');
   }
   camera.quaternion.copy(new THREE.Quaternion().setFromAxisAngle(up, -compassZero).multiply(orientation));
 }
 
 async function startCompass() {
   ui.compassButton.disabled = true;
-  status('正在打开相机并准备环视场景…');
+  status('cameraStarting');
   try {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('浏览器没有相机接口');
     // Trigger both permission requests in the same tap where possible.
@@ -423,7 +497,7 @@ async function startCompass() {
     stream = await cameraRequest;
     const motionPermission = await motionRequest;
     await ensureScene();
-    basePanoOpacity = 0.42;
+    basePanoOpacity = 0.16;
     ui.video.srcObject = stream;
     ui.video.style.display = 'block';
     await ui.video.play();
@@ -437,16 +511,18 @@ async function startCompass() {
     window.addEventListener('deviceorientation', onOrientation);
     beginReveal();
     renderer.setAnimationLoop(animate);
-    ui.badge.textContent = '原地环视 · 无地面定位';
-    status('绿洲已展开。此模式没有检测地面或障碍；只在原地慢慢转身');
-    if (motionPermission !== 'granted') status('已打开相机；运动传感器未获准，滑动屏幕可预览场景');
+    setMode('modeCompass');
+    status('compassRunning');
+    game?.startHands(ui.video);
+    if (motionPermission !== 'granted') status('motionDenied');
     clearTimeout(gyroStartTimer);
     gyroStartTimer = setTimeout(() => {
-      if (mode === 'compass' && !gyroSeen) status('未收到手机转动数据；滑动屏幕仅能预览场景，不能用于空间定位');
+      if (mode === 'compass' && !gyroSeen) status('noGyro');
     }, 3500);
   } catch (error) {
     stopCompass();
-    status(`相机未能开启（${error.name || error.message || '未知原因'}）。请检查浏览器相机权限。`);
+    status('cameraFailed');
+    setCapability('cameraFailed');
   } finally {
     ui.compassButton.disabled = false;
   }
@@ -462,17 +538,21 @@ function stopCompass() {
   renderer?.setAnimationLoop(null);
   mode = 'idle';
   if (world) world.visible = false;
-  ui.gate.hidden = false;
+  game?.stopHands();
+  setGateVisible(true);
   ui.realmNav.hidden = true;
   ui.badge.hidden = true;
 }
 
 function pointerDown(event) {
-  if (mode !== 'compass' || gyroSeen || !ui.gate.hidden) return;
+  if (world?.visible && !event.target.closest('button, a, .entry-gate, .interaction-panel, .realm-nav')) {
+    game?.tap(event.clientX, event.clientY);
+  }
+  if ((mode !== 'compass' && mode !== 'preview') || (mode === 'compass' && gyroSeen) || !ui.gate.hidden) return;
   dragStart = { x: event.clientX, yaw: manualYaw };
 }
 function pointerMove(event) {
-  if (!dragStart || mode !== 'compass' || gyroSeen) return;
+  if (!dragStart || (mode !== 'compass' && mode !== 'preview') || (mode === 'compass' && gyroSeen)) return;
   manualYaw = dragStart.yaw - (event.clientX - dragStart.x) / innerWidth * Math.PI;
   camera.rotation.set(0, manualYaw, 0, 'YXZ');
 }
@@ -485,28 +565,27 @@ async function bootstrap() {
       world.position.set(0, 0, 0);
       beginReveal();
       renderer.setAnimationLoop(animate);
-      status('本地场景预览 · 不使用相机或地面定位');
-      ui.badge.textContent = '本地预览 · 无地面定位';
-    } catch (error) { status(`预览加载失败：${error.message}`); }
+      status('preview');
+      setMode('modePreview');
+    } catch (error) { status('previewFailed'); }
     return;
   }
   if (!scanAt || Date.now() - scanAt > 2 * 60 * 60 * 1000) return;
   try {
     const available = !!navigator.xr && await navigator.xr.isSessionSupported('immersive-ar');
     ui.floorButton.hidden = !available;
-    ui.capability.textContent = available
-      ? '设备报告支持 WebXR；点击后再检查是否具备平面识别。'
-      : '这台手机或浏览器没有 WebXR 地面定位；仍可用相机原地环视。';
-    status('图卡已识别。先确认现实环境安全，再选择进入方式');
+    setCapability(available ? 'capabilityXR' : 'capabilityNoXR');
+    status('ready');
   } catch {
     ui.floorButton.hidden = true;
-    ui.capability.textContent = '无法查询地面定位能力；可用相机原地环视。';
-    status('图卡已识别。先确认现实环境安全，再进入场景');
+    setCapability('capabilityNoXR');
+    status('ready');
   }
 }
 
 ui.floorButton.addEventListener('click', startFloor);
 ui.compassButton.addEventListener('click', startCompass);
+ui.languageToggle.addEventListener('click', () => { language = language === 'fr' ? 'en' : 'fr'; saveLanguage(language); refreshLanguage(); });
 window.addEventListener('resize', resize);
 window.addEventListener('pointerdown', pointerDown);
 window.addEventListener('pointermove', pointerMove);
@@ -516,7 +595,7 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) return;
   if (mode === 'compass') {
     stopCompass();
-    status('相机已暂停；返回后请重新确认周围安全');
+    status('paused');
   } else if (mode === 'xr') xrSession?.end();
 });
 window.addEventListener('pagehide', () => {
@@ -524,4 +603,6 @@ window.addEventListener('pagehide', () => {
   xrSession?.end();
 });
 
+refreshLanguage();
+setGateVisible(true);
 bootstrap();

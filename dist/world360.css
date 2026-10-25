@@ -10,22 +10,51 @@ button { border: 0; cursor: pointer; }
 #sceneLayer { pointer-events: none; }
 #voxelReveal { pointer-events: none; z-index: 6; }
 .topbar { position: fixed; z-index: 8; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: start; gap: 12px; padding: max(16px, env(safe-area-inset-top)) 17px 12px; background: linear-gradient(#071b26cf, transparent); }
-.topbar div { display: grid; gap: 2px; }
+.topbar > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.topbar-actions { display: flex; gap: 6px; align-items: center; }
+.topbar-actions button { color: #fff5d8; background: #102d35dc; border: 1px solid #ead9ad9c; border-radius: 999px; padding: 9px 10px; font-size: 12px; font-weight: 800; white-space: nowrap; }
 .eyebrow { color: #b9dfcd; font-size: 11px; letter-spacing: .1em; }
 .topbar strong { font-family: "STKaiti", "Kaiti SC", serif; font-size: 24px; font-weight: 500; letter-spacing: .1em; }
 .topbar a { display: inline-grid; place-items: center; padding: 9px 12px; border: 1px solid #e4edd48c; border-radius: 999px; color: #eff7e8; text-decoration: none; background: #102d35d9; font-size: 12px; white-space: nowrap; }
-.status-line { position: fixed; z-index: 8; left: 50%; top: max(100px, calc(env(safe-area-inset-top) + 90px)); transform: translateX(-50%); width: min(84vw, 420px); margin: 0; padding: 10px 14px; border: 1px solid #b9d9c06e; border-radius: 16px; background: #0a2836de; text-align: center; font-size: 13px; line-height: 1.5; }
-.mode-badge { position: fixed; z-index: 8; right: 14px; bottom: max(122px, calc(env(safe-area-inset-bottom) + 112px)); margin: 0; padding: 8px 11px; border-radius: 999px; background: #14353ee0; color: #d9f2de; font-size: 11px; }
-.safety-badge { position: fixed; z-index: 8; left: 13px; right: 13px; bottom: max(69px, calc(env(safe-area-inset-bottom) + 59px)); margin: 0; padding: 9px 13px; border: 1px solid #ead9ad9c; border-radius: 13px; background: #392b24df; color: #fff0cc; text-align: center; font-size: 12px; line-height: 1.35; }
+.status-line { position: fixed; z-index: 8; left: 50%; top: max(94px, calc(env(safe-area-inset-top) + 80px)); transform: translateX(-50%); width: min(88vw, 420px); margin: 0; padding: 9px 13px; border: 1px solid #b9d9c06e; border-radius: 16px; background: #0a2836de; text-align: left; line-height: 1.4; }
+.mode-badge { position: fixed; z-index: 8; right: 14px; bottom: max(126px, calc(env(safe-area-inset-bottom) + 116px)); margin: 0; padding: 7px 10px; border-radius: 13px; background: #14353ee0; color: #d9f2de; max-width: 65vw; }
+.safety-badge { position: fixed; z-index: 8; left: 13px; right: 13px; bottom: max(60px, calc(env(safe-area-inset-bottom) + 50px)); margin: 0; padding: 8px 12px; border: 1px solid #ead9ad9c; border-radius: 13px; background: #392b24e8; color: #fff0cc; line-height: 1.35; }
+.foreign-copy, .zh-copy { display: block; }
+.foreign-copy { color: #fff4d8; font-size: 15px; font-weight: 750; line-height: 1.35; text-align: left; hyphens: auto; text-wrap: pretty; }
+.zh-copy { color: #d8e6dd; font-size: 11.5px; line-height: 1.45; text-align: left; text-indent: 2em; margin-top: 3px; }
+.mode-badge .foreign-copy { font-size: 12px; }
+.mode-badge .zh-copy { font-size: 10px; }
 .entry-gate { position: fixed; z-index: 12; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(90vw, 440px); max-height: calc(100dvh - 130px); overflow-y: auto; padding: 20px 22px 24px; border: 1px solid #cae0c18c; border-radius: 24px; background: linear-gradient(150deg, #143d48f7, #122830f8); box-shadow: 0 18px 55px #03161bba; text-align: center; }
 .gate-mark { display: block; color: #d7c79c; font-size: 30px; }
-.entry-gate h1 { margin: 4px 0 13px; font-family: "STKaiti", "Kaiti SC", serif; font-size: 29px; font-weight: 500; }
-.entry-gate p { margin: 0 0 12px; line-height: 1.6; font-size: 14px; }
-.entry-gate .safety-note { padding: 10px 12px; border-left: 3px solid #ddaa79; background: #513a3482; color: #ffebd0; text-align: left; font-size: 12px; }
+.entry-gate h1 { margin: 4px 0 13px; font-family: "STKaiti", "Kaiti SC", serif; font-size: 28px; font-weight: 500; }
+.entry-gate h1 .zh-copy { font: inherit; color: #fff5dd; text-indent: 0; text-align: center; }
+.entry-gate h1 .foreign-copy { font: 700 17px/1.3 system-ui, sans-serif; color: #f1d7a1; text-align: center; }
+.entry-gate p { margin: 0 0 12px; line-height: 1.6; }
+.entry-gate p .foreign-copy { font-size: 15px; }
+.entry-gate .safety-note { padding: 10px 12px; border-left: 3px solid #ddaa79; background: #513a3482; color: #ffebd0; text-align: left; }
 .entry-gate button { width: 100%; margin-top: 10px; padding: 14px 10px; border-radius: 13px; font-weight: 700; }
 .entry-gate .primary { color: #13353b; background: #c8dfcb; }
 .entry-gate .secondary { color: #e8f4ea; border: 1px solid #9cc9b193; background: #40615c7a; }
-.entry-gate small { display: block; margin-top: 13px; color: #c4d9d1; line-height: 1.5; }
+.entry-gate button .foreign-copy { color: inherit; font-size: 14px; text-align: center; }
+.entry-gate button .zh-copy { color: inherit; font-size: 11px; text-align: center; text-indent: 0; }
+.capability-note { margin-top: 13px; padding: 8px; border-radius: 10px; background: #233f42; }
+.capability-note .foreign-copy { font-size: 13px; }
+.capability-note .zh-copy { font-size: 11px; }
+.realm-narration { position: fixed; z-index: 8; left: 14px; right: 14px; bottom: max(177px, calc(env(safe-area-inset-bottom) + 167px)); padding: 9px 12px; background: #0b3341c7; border: 1px solid #c5d8c077; border-radius: 13px; max-height: 17vh; overflow-y: auto; }
+.realm-narration .foreign-copy { font-size: 13px; }
+.interaction-panel { position: fixed; z-index: 9; left: 14px; right: 14px; top: max(166px, calc(env(safe-area-inset-top) + 150px)); max-width: 440px; margin: 0 auto; padding: 10px 12px; border: 1px solid #c5d8c077; border-radius: 15px; background: #0b3341d9; }
+.game-hint .foreign-copy, .game-explainer .foreign-copy { font-size: 14px; }
+.game-explainer { position: fixed; z-index: 9; left: 50%; top: 53%; transform: translate(-50%, -50%); width: min(84vw, 340px); padding: 11px 13px; border: 1px solid #d2cfb7aa; border-radius: 13px; background: #103644e8; box-shadow: 0 8px 28px #07212788; }
+.game-explainer .foreign-copy { font-size: 16px; }
+.game-reticle { position: fixed; z-index: 8; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%); border: 2px solid #fff4d8; border-radius: 50%; box-shadow: 0 0 9px #0b2638; pointer-events: none; }
+.game-reticle::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; transform: translate(-50%, -50%); border-radius: 50%; background: #fff4d8; }
+.hand-pointer { position: fixed; z-index: 9; width: 34px; height: 34px; transform: translate(-50%, -50%); border: 2px solid #e9f4bd; border-radius: 50%; box-shadow: 0 0 18px #e3ee9c; pointer-events: none; }
+.hand-pointer.pinching { background: #e9f4bd66; border-width: 4px; }
+.game-actions { display: flex; gap: 8px; margin-top: 8px; }
+.game-actions button { flex: 1; padding: 9px; border-radius: 10px; color: #15373b; background: #d5e5c5; font-weight: 750; }
+.game-actions button:disabled { opacity: .48; cursor: default; }
+.game-actions button .foreign-copy { color: inherit; text-align: center; font-size: 13px; }
+.game-actions button .zh-copy { color: inherit; text-align: center; text-indent: 0; }
 .realm-nav { position: fixed; z-index: 8; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 5px; max-width: calc(100vw - 20px); padding: 5px; border-radius: 999px; background: #08272bcf; }
 .realm-nav[hidden] { display: none; }
 .realm-nav button { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; color: #d3e5d7; background: transparent; font-size: 13px; }

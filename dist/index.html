@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#173d4a" />
     <title>汉字图卡 AR</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
-    <link rel="stylesheet" href="./styles.css?v=10" />
+    <link rel="stylesheet" href="./styles.css?v=11" />
     <script type="importmap">
       {
         "imports": {
@@ -37,8 +37,9 @@
         <button id="retryCamera" class="retry-camera" hidden>重新开启相机</button>
         <div id="worldPortal" class="world-portal" hidden>
           <strong>图卡已识别 · 绿洲入口开启</strong>
-          <span>进入下一步后，请先肉眼确认周围安全，再将镜头对准平坦地面。</span>
-          <button id="enterWorld" type="button">寻找地面，展开 360° 绿洲</button>
+          <button id="portalLanguage" class="portal-language" type="button">FR / EN</button>
+          <span id="portalIntro"><b class="foreign-copy"></b><b class="zh-copy"></b></span>
+          <button id="enterWorld" type="button"><b class="foreign-copy"></b><b class="zh-copy"></b></button>
           <small>当前组字游戏仍可在图卡画面中继续。</small>
         </div>
         <div id="handCursor" aria-hidden="true"></div>
@@ -55,6 +56,6 @@
         <button id="againButton" class="primary">再玩一次</button>
       </section>
     </main>
-    <script type="module" src="./app.js?v=20"></script>
+    <script type="module" src="./app.js?v=21"></script>
   </body>
 </html>

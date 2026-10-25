@@ -1,4 +1,5 @@
 import { createOasis, makeGlyphSprite, changeGlyph } from './oasis3d.js';
+import { copy, preferredLanguage, saveLanguage } from './world360-copy.js';
 
 // Each realm selects three word missions. 葡萄 and 萌芽 require two glyphs each.
 const hskWords = {
@@ -112,6 +113,18 @@ const completeText = document.querySelector('#complete p:not(.eyebrow)');
 const sceneCaption = document.querySelector('#sceneCaption');
 const worldPortal = document.querySelector('#worldPortal');
 const enterWorld = document.querySelector('#enterWorld');
+const portalLanguage = document.querySelector('#portalLanguage');
+const portalIntro = document.querySelector('#portalIntro');
+let portalTranslation = preferredLanguage();
+
+function refreshPortalLanguage() {
+  portalLanguage.textContent = portalTranslation === 'fr' ? 'FR / EN' : 'EN / FR';
+  for (const [element, entry] of [[portalIntro, copy.portalIntro], [enterWorld, copy.portalButton]]) {
+    element.querySelector('.foreign-copy').textContent = entry[portalTranslation];
+    element.querySelector('.foreign-copy').lang = portalTranslation;
+    element.querySelector('.zh-copy').textContent = entry.zh;
+  }
+}
 
 let levelIndex = 0;
 let glyphIndex = 0;
@@ -230,7 +243,7 @@ async function startFallbackCamera() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
   document.querySelector('#cameraContainer').append(renderer.domElement);
-  const oasis = createOasis(THREE);
+  const oasis = createOasis(THREE, { scenery: false });
   oasis.root.scale.setScalar(0.52);
   scene.add(oasis.root);
   arRuntime = { scene, camera, renderer, oasis, mode: 'practice' };
@@ -605,7 +618,7 @@ async function startAR() {
     const { renderer, scene, camera } = mindar;
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     scene.add(camera);
-    const oasis = createOasis(THREE);
+    const oasis = createOasis(THREE, { scenery: false });
     const anchor = mindar.addAnchor(0);
     anchor.group.add(oasis.root);
     arRuntime = { scene, camera, renderer, oasis, anchor, mode: 'marker' };
@@ -619,7 +632,7 @@ async function startAR() {
       arView.classList.remove('story-mode');
       if (isFirstScan) {
         createLevel();
-        setStatus('图卡已识别：立体绿洲浮现。捏住一枚字形，移近另一枚');
+        setStatus('图卡已识别：绿洲入口开启。捏住一枚字形，移近另一枚');
         gestureState.textContent = '手心或手背均可；让整只抓取手出现在镜头里';
       } else {
         setStatus('图卡重新校准完成：继续在绿洲中抓取偏旁');
@@ -730,8 +743,14 @@ enterWorld.addEventListener('click', () => {
   if (!scanConfirmed) return;
   sessionStorage.setItem('hanzi-world-scan', String(Date.now()));
   stopGame();
-  window.location.assign('./world360.html');
+  window.location.assign('./world360.html?v=4');
 });
+portalLanguage.addEventListener('click', () => {
+  portalTranslation = portalTranslation === 'fr' ? 'en' : 'fr';
+  saveLanguage(portalTranslation);
+  refreshPortalLanguage();
+});
+refreshPortalLanguage();
 handModeButton.addEventListener('click', () => {
   playingHand = playingHand === 'right' ? 'left' : 'right';
   localStorage.setItem('hanzi-playing-hand', playingHand);
