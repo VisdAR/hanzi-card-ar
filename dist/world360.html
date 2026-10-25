@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#123744" />
+    <title>立体绿洲 · 汉字图卡</title>
+    <link rel="stylesheet" href="./world360.css?v=1" />
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three.module.js" } }
+    </script>
+  </head>
+  <body>
+    <video id="cameraFeed" autoplay playsinline muted aria-hidden="true"></video>
+    <div id="sceneLayer" aria-hidden="true"></div>
+    <canvas id="voxelReveal" aria-hidden="true"></canvas>
+
+    <header class="topbar">
+      <div><span class="eyebrow">汉字图卡 · 立体绿洲</span><strong id="realmName">初醒藤影</strong></div>
+      <a id="backLink" href="./index.html?play=1" aria-label="返回图卡游戏">返回组字</a>
+    </header>
+
+    <div id="floorReticle" class="floor-reticle" hidden aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <p id="statusLine" class="status-line" role="status">正在准备立体场景…</p>
+    <p id="safetyBadge" class="safety-badge">只在平坦空旷处原地转身 · 随时抬头看路</p>
+    <p id="modeBadge" class="mode-badge" hidden></p>
+
+    <section id="entryGate" class="entry-gate" aria-label="场景进入步骤">
+      <span class="gate-mark">✦</span>
+      <h1>让绿洲在身边展开</h1>
+      <p>先用眼睛确认地面平坦、周围没有障碍，再把镜头缓缓对向地面。场景出现后请站在原地转身观看。</p>
+      <p class="safety-note">远离楼梯、阳台或悬崖边缘、道路和水边。手机可能看不到障碍或落差，画面不能代替你观察真实环境。</p>
+      <button id="startFloor" class="primary" type="button" hidden>识别地面并放置场景</button>
+      <button id="startCompass" class="secondary" type="button">原地环视（不定位地面）</button>
+      <small id="capabilityNote">正在检查这台设备是否支持地面定位…</small>
+    </section>
+
+    <nav id="realmNav" class="realm-nav" aria-label="预览六境" hidden></nav>
+    <script type="module" src="./world360.js?v=1"></script>
+  </body>
+</html>

@@ -110,6 +110,8 @@ const handModeButton = document.querySelector('#handMode');
 const completeHeading = document.querySelector('#complete h1');
 const completeText = document.querySelector('#complete p:not(.eyebrow)');
 const sceneCaption = document.querySelector('#sceneCaption');
+const worldPortal = document.querySelector('#worldPortal');
+const enterWorld = document.querySelector('#enterWorld');
 
 let levelIndex = 0;
 let glyphIndex = 0;
@@ -575,7 +577,8 @@ async function startAR() {
   practiceMode = false;
   scanConfirmed = false;
   foundTarget = false;
-  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom');
+  worldPortal.hidden = true;
+  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom', 'world-ready');
   releaseMindARCamera();
   fallbackStream?.getTracks().forEach((track) => track.stop());
   fallbackStream = null;
@@ -610,6 +613,8 @@ async function startAR() {
       foundTarget = true;
       const isFirstScan = !scanConfirmed;
       scanConfirmed = true;
+      worldPortal.hidden = false;
+      arView.classList.add('world-ready');
       arView.classList.add('found', 'scanned');
       arView.classList.remove('story-mode');
       if (isFirstScan) {
@@ -707,8 +712,9 @@ function stopGame() {
   fallbackStream = null;
   document.querySelector('#cameraContainer').replaceChildren();
   arView.style.display = 'none';
-  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom');
+  arView.classList.remove('found', 'scanned', 'story-mode', 'practice', 'scene-bloom', 'world-ready');
   scanConfirmed = false;
+  worldPortal.hidden = true;
   practiceMode = false;
   foundTarget = false;
   cursor.style.opacity = '0';
@@ -720,6 +726,12 @@ practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
 againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; glyphIndex = 0; levels = createCampaign(); welcome.hidden = false; });
 retryCamera.addEventListener('click', startAR);
+enterWorld.addEventListener('click', () => {
+  if (!scanConfirmed) return;
+  sessionStorage.setItem('hanzi-world-scan', String(Date.now()));
+  stopGame();
+  window.location.assign('./world360.html');
+});
 handModeButton.addEventListener('click', () => {
   playingHand = playingHand === 'right' ? 'left' : 'right';
   localStorage.setItem('hanzi-playing-hand', playingHand);

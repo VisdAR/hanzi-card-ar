@@ -1,0 +1,39 @@
+:root { font-family: "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif; color: #f2f6e9; background: #071d25; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { background: radial-gradient(circle at 50% 35%, #416775, #123340 55%, #071d25); }
+button, a { font: inherit; touch-action: manipulation; }
+button { border: 0; cursor: pointer; }
+#cameraFeed, #sceneLayer, #sceneLayer canvas, #voxelReveal { position: fixed; inset: 0; width: 100%; height: 100%; }
+#cameraFeed { object-fit: cover; display: none; }
+#sceneLayer { pointer-events: none; }
+#voxelReveal { pointer-events: none; z-index: 6; }
+.topbar { position: fixed; z-index: 8; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: start; gap: 12px; padding: max(16px, env(safe-area-inset-top)) 17px 12px; background: linear-gradient(#071b26cf, transparent); }
+.topbar div { display: grid; gap: 2px; }
+.eyebrow { color: #b9dfcd; font-size: 11px; letter-spacing: .1em; }
+.topbar strong { font-family: "STKaiti", "Kaiti SC", serif; font-size: 24px; font-weight: 500; letter-spacing: .1em; }
+.topbar a { display: inline-grid; place-items: center; padding: 9px 12px; border: 1px solid #e4edd48c; border-radius: 999px; color: #eff7e8; text-decoration: none; background: #102d35d9; font-size: 12px; white-space: nowrap; }
+.status-line { position: fixed; z-index: 8; left: 50%; top: max(100px, calc(env(safe-area-inset-top) + 90px)); transform: translateX(-50%); width: min(84vw, 420px); margin: 0; padding: 10px 14px; border: 1px solid #b9d9c06e; border-radius: 16px; background: #0a2836de; text-align: center; font-size: 13px; line-height: 1.5; }
+.mode-badge { position: fixed; z-index: 8; right: 14px; bottom: max(122px, calc(env(safe-area-inset-bottom) + 112px)); margin: 0; padding: 8px 11px; border-radius: 999px; background: #14353ee0; color: #d9f2de; font-size: 11px; }
+.safety-badge { position: fixed; z-index: 8; left: 13px; right: 13px; bottom: max(69px, calc(env(safe-area-inset-bottom) + 59px)); margin: 0; padding: 9px 13px; border: 1px solid #ead9ad9c; border-radius: 13px; background: #392b24df; color: #fff0cc; text-align: center; font-size: 12px; line-height: 1.35; }
+.entry-gate { position: fixed; z-index: 12; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(90vw, 440px); max-height: calc(100dvh - 130px); overflow-y: auto; padding: 20px 22px 24px; border: 1px solid #cae0c18c; border-radius: 24px; background: linear-gradient(150deg, #143d48f7, #122830f8); box-shadow: 0 18px 55px #03161bba; text-align: center; }
+.gate-mark { display: block; color: #d7c79c; font-size: 30px; }
+.entry-gate h1 { margin: 4px 0 13px; font-family: "STKaiti", "Kaiti SC", serif; font-size: 29px; font-weight: 500; }
+.entry-gate p { margin: 0 0 12px; line-height: 1.6; font-size: 14px; }
+.entry-gate .safety-note { padding: 10px 12px; border-left: 3px solid #ddaa79; background: #513a3482; color: #ffebd0; text-align: left; font-size: 12px; }
+.entry-gate button { width: 100%; margin-top: 10px; padding: 14px 10px; border-radius: 13px; font-weight: 700; }
+.entry-gate .primary { color: #13353b; background: #c8dfcb; }
+.entry-gate .secondary { color: #e8f4ea; border: 1px solid #9cc9b193; background: #40615c7a; }
+.entry-gate small { display: block; margin-top: 13px; color: #c4d9d1; line-height: 1.5; }
+.realm-nav { position: fixed; z-index: 8; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 5px; max-width: calc(100vw - 20px); padding: 5px; border-radius: 999px; background: #08272bcf; }
+.realm-nav[hidden] { display: none; }
+.realm-nav button { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; color: #d3e5d7; background: transparent; font-size: 13px; }
+.realm-nav button[aria-current="true"] { color: #14383a; background: #c9d8b5; font-weight: 800; }
+.floor-reticle { position: fixed; z-index: 7; left: 50%; top: 53%; width: 108px; height: 108px; transform: translate(-50%, -50%); filter: drop-shadow(0 0 10px #c8f4d4); }
+.floor-reticle[hidden], .mode-badge[hidden], .entry-gate[hidden] { display: none; }
+.floor-reticle i { position: absolute; width: 24px; height: 24px; border-color: #ccedd2; border-style: solid; }
+.floor-reticle i:nth-child(1) { left: 0; top: 0; border-width: 3px 0 0 3px; }
+.floor-reticle i:nth-child(2) { right: 0; top: 0; border-width: 3px 3px 0 0; }
+.floor-reticle i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 3px 3px; }
+.floor-reticle i:nth-child(4) { right: 0; bottom: 0; border-width: 0 3px 3px 0; }
