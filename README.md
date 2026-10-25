@@ -2,7 +2,7 @@
 
 无需安装 App 的手机网页游戏：扫描实体图卡角落的二维码，二维码应指向
 `https://visdar.github.io/hanzi-card-ar/?play=1`。手机会直接打开游戏并请求相机权限；
-随后对准图卡，用拇指和食指捏合偏旁完成组字。
+随后对准图卡，用拇指和食指捏住场景中的构字部件，让部件在镜头画面里相遇，直接组成汉字。每境随机出现一至两个可发现的彩蛋。
 
 发布后的可打印入口为 [`print-card.html`](https://visdar.github.io/hanzi-card-ar/print-card.html)：二维码位于识别图卡外侧，因此不会破坏图像定位素材。
 
@@ -15,3 +15,9 @@ python3 -m http.server 4174 --directory dist
 ```
 
 正式使用必须从 HTTPS 地址打开，浏览器才会允许相机。
+
+## 实现与当前边界
+
+网页使用 MindAR 识别启动图、Three.js 渲染有前后深度的绿洲模型、MediaPipe 在后置相机画面中寻找手指捏合。模型由 `dist/oasis3d.js` 程序生成，当前不需要 Blender 文件。图卡离镜后，模型转为随镜头的漂浮模式；单靠图片识别不能保持房间内的固定位置。
+
+Unity/Vuforia 工程可用于原生 Android/iOS 应用；本仓库交付的是免安装网页，因此浏览器端使用上述网页技术。网页版的触摸屏不承担主要组字操作。

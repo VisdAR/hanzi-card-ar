@@ -1,6 +1,6 @@
-// Single-character prototype: each realm selects three entries at random.
-// Two-character missions (葡萄、萌芽) are specified for the full game but are not
-// represented as completed word missions by this prototype.
+import { createOasis, makeGlyphSprite, changeGlyph } from './oasis3d.js';
+
+// Each realm selects three word missions. 葡萄 and 萌芽 require two glyphs each.
 const hskWords = {
   1: [
     { word: '茶', pinyin: 'chá', radicals: ['艹', '人', '木'] },
@@ -15,6 +15,10 @@ const hskWords = {
     { word: '花', pinyin: 'huā', radicals: ['艹', '化'] },
     { word: '蓝', pinyin: 'lán', radicals: ['艹', '监'] },
     { word: '节', pinyin: 'jié', radicals: ['艹', '卩'] },
+    { word: '葡萄', pinyin: 'pútao', glyphs: [
+      { char: '葡', radicals: ['艹', '勹', '甫'] },
+      { char: '萄', radicals: ['艹', '勹', '缶'] },
+    ] },
   ],
   4: [
     { word: '苦', pinyin: 'kǔ', radicals: ['艹', '古'] },
@@ -30,7 +34,10 @@ const hskWords = {
     { word: '营', pinyin: 'yíng', radicals: ['艹', '冖', '吕'] },
   ],
   6: [
-    { word: '萌', pinyin: 'méng', radicals: ['艹', '明'] },
+    { word: '萌芽', pinyin: 'méngyá', glyphs: [
+      { char: '萌', radicals: ['艹', '明'] },
+      { char: '芽', radicals: ['艹', '牙'] },
+    ] },
     { word: '茂', pinyin: 'mào', radicals: ['艹', '戊'] },
     { word: '蒸', pinyin: 'zhēng', radicals: ['艹', '丞', '灬'] },
     { word: '荒', pinyin: 'huāng', radicals: ['艹', '巟'] },
@@ -53,7 +60,12 @@ function realmTitle(level) {
 }
 
 function shuffled(words) {
-  return [...words].sort(() => Math.random() - 0.5);
+  const result = [...words];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
 function positionsFor(count) {
@@ -74,7 +86,6 @@ function createCampaign() {
       ...entry,
       hsk,
       stageIndex: stageIndex + 1,
-      positions: positionsFor(entry.radicals.length),
     }));
     learned.push(...hskWords[hsk]);
   }
@@ -90,8 +101,6 @@ const startButton = document.querySelector('#startButton');
 const practiceButton = document.querySelector('#practiceButton');
 const exitButton = document.querySelector('#exitButton');
 const againButton = document.querySelector('#againButton');
-const layer = document.querySelector('#radicalLayer');
-const slots = document.querySelector('#slots');
 const stageTitle = document.querySelector('#stageTitle');
 const status = document.querySelector('#status');
 const retryCamera = document.querySelector('#retryCamera');
@@ -103,9 +112,16 @@ const completeText = document.querySelector('#complete p:not(.eyebrow)');
 const sceneCaption = document.querySelector('#sceneCaption');
 
 let levelIndex = 0;
+let glyphIndex = 0;
 let active = null;
-let pointer = { x: 50, y: 40 };
+let pointer = { x: 0, y: 0 };
 let radialNodes = [];
+let arRuntime = null;
+let hoveredNode = null;
+let combineCandidate = null;
+let combineStartedAt = 0;
+let completing = false;
+let completionTimeout = 0;
 let foundTarget = false;
 let scanConfirmed = false;
 let practiceMode = false;
@@ -123,11 +139,10 @@ let pinchReleaseStartedAt = 0;
 let pinchHeld = false;
 let playingHand = localStorage.getItem('hanzi-playing-hand') === 'left' ? 'left' : 'right';
 
-const PICKUP_RADIUS_PX = 195;
-const PINCH_CLOSE_RATIO = 0.72;
-const PINCH_OPEN_RATIO = 1.05;
-const PINCH_RELEASE_GRACE_MS = 1050;
-const HAND_LOSS_GRACE_MS = 1500;
+const PINCH_CLOSE_RATIO = 0.95;
+const PINCH_OPEN_RATIO = 1.35;
+const PINCH_RELEASE_GRACE_MS = 380;
+const HAND_LOSS_GRACE_MS = 2400;
 
 function describeHandMode() {
   return playingHand === 'right' ? '左手持机 · 右手抓取' : '右手持机 · 左手抓取';
@@ -147,7 +162,8 @@ function setSceneCaption(message) { sceneCaption.textContent = message; }
 
 function sceneMessage(level, complete = false) {
   if (complete) return `「${level.word}」已成 · 绿洲回应了你的文字`;
-  return `${realmNames[level.hsk]} · 找到「${level.word}」的构字部件`;
+  const glyph = currentGlyph();
+  return `${realmNames[level.hsk]} · 找到「${glyph.char}」的构字部件`;
 }
 
 function playChime() {
@@ -199,13 +215,34 @@ async function startFallbackCamera() {
   video.srcObject = stream;
   document.querySelector('#cameraContainer').replaceChildren(video);
   await video.play();
+  THREE = await import('three');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(47, innerWidth / innerHeight, 0.01, 20);
+  camera.position.z = 1.55;
+  scene.add(camera);
+  scene.add(new THREE.HemisphereLight(0xf9f0dc, 0x335d61, 2.0));
+  const keyLight = new THREE.DirectionalLight(0xffdcad, 1.7);
+  keyLight.position.set(-0.5, 1, 2);
+  scene.add(keyLight);
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.setSize(innerWidth, innerHeight);
+  document.querySelector('#cameraContainer').append(renderer.domElement);
+  const oasis = createOasis(THREE);
+  oasis.root.scale.setScalar(0.52);
+  scene.add(oasis.root);
+  arRuntime = { scene, camera, renderer, oasis, mode: 'practice' };
+  renderer.setAnimationLoop((time) => {
+    oasis.update(time);
+    renderer.render(scene, camera);
+  });
   practiceMode = true;
   scanConfirmed = true;
   arView.classList.add('practice', 'scanned', 'story-mode');
   createLevel();
   retryCamera.hidden = true;
-  setSceneCaption('试玩模式 · 没有图卡定位，偏旁只会跟随镜头画面');
-  setStatus('试玩模式：手势可用，但不会有图卡扫描后的定位效果');
+  setSceneCaption('试玩模式 · 立体绿洲随镜头移动');
+  setStatus('试玩模式：把手伸入镜头，捏住字形并与另一枚相碰');
   await setupHandTracking(video);
 }
 
@@ -218,108 +255,165 @@ function releaseMindARCamera() {
 }
 
 function currentLevel() { return levels[levelIndex]; }
+function currentGlyph() {
+  const level = currentLevel();
+  return level.glyphs?.[glyphIndex] || { char: level.word, radicals: level.radicals };
+}
 
 function createLevel() {
+  if (!arRuntime || !currentLevel()) return;
   active = null;
-  layer.innerHTML = '';
-  slots.innerHTML = '';
+  hoveredNode = null;
+  combineCandidate = null;
+  completing = false;
+  radialNodes.forEach((node) => {
+    node.parent?.remove(node);
+    node.userData.texture?.dispose();
+    node.material?.dispose();
+  });
   radialNodes = [];
   const level = currentLevel();
+  const glyph = currentGlyph();
+  const positions = positionsFor(glyph.radicals.length);
   arView.dataset.hsk = level.hsk;
-  stageTitle.textContent = `${realmTitle(level)} · 第 ${level.stageIndex}/3 字 · 组出「${level.word}」`;
+  arRuntime.oasis.setRealm(level.hsk);
+  stageTitle.textContent = `${realmTitle(level)} · 第 ${level.stageIndex}/3 词 · 组「${level.word}」${level.glyphs ? `中的「${glyph.char}」` : ''}`;
   setSceneCaption(sceneMessage(level));
-  level.radicals.forEach((radical, index) => {
-    const slot = document.createElement('div');
-    slot.className = 'slot';
-    slot.dataset.radical = radical;
-    slots.append(slot);
-    const node = document.createElement('button');
-    node.className = 'radical';
-    node.type = 'button';
-    node.textContent = radical;
-    node.dataset.radical = radical;
-    const position = positionForPlayingHand(level.positions[index]);
-    node.style.left = `${position[0]}%`;
-    node.style.top = `${position[1]}%`;
-    layer.append(node);
+  glyph.radicals.forEach((radical, index) => {
+    const position = positionForPlayingHand(positions[index]);
+    const node = makeGlyphSprite(THREE, radical, 0.19);
+    node.position.set((position[0] - 50) / 100, 0.12 + (50 - position[1]) / 100, 0.31 + index * 0.025);
+    node.userData.parts = [index];
+    node.userData.origin = node.position.clone();
+    arRuntime.oasis.root.add(node);
     radialNodes.push(node);
   });
+  gestureState.textContent = '捏住一个部件，碰到另一个部件就会融合';
+}
+
+function screenPosition(node) {
+  if (!arRuntime || !node.visible) return null;
+  arRuntime.camera.updateMatrixWorld(true);
+  arRuntime.scene.updateMatrixWorld(true);
+  const p = new THREE.Vector3();
+  node.getWorldPosition(p);
+  p.project(arRuntime.camera);
+  if (p.z < -1 || p.z > 1) return null;
+  const rect = arRuntime.renderer.domElement.getBoundingClientRect();
+  return { x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2 };
+}
+
+function revealNearbyEgg(x, y) {
+  if (!arRuntime || completing) return false;
+  const radius = Math.max(58, Math.min(95, innerWidth * 0.10));
+  const egg = arRuntime.oasis.eggs
+    .filter((candidate) => candidate.visible)
+    .map((candidate) => {
+      const point = screenPosition(candidate);
+      return { candidate, distance: point ? Math.hypot(x - point.x, y - point.y) : Infinity };
+    })
+    .sort((a, b) => a.distance - b.distance)[0];
+  if (!egg || egg.distance > radius) return false;
+  const discovery = arRuntime.oasis.revealEgg(egg.candidate);
+  if (!discovery) return false;
+  setSceneCaption(`发现彩蛋 · ${discovery}`);
+  gestureState.textContent = '找到了隐藏彩蛋！继续把构字部件靠在一起';
+  playChime();
+  return true;
 }
 
 function grab(node, x, y) {
-  if (node.classList.contains('used')) return;
-  if (active && active !== node) active.classList.remove('held');
+  if (!node.visible || completing) return;
   active = node;
-  active.classList.add('held');
+  node.scale.setScalar(node.userData.parts.length > 1 ? 0.23 : 0.21);
   moveActive(x, y);
-  gestureState.textContent = '已抓住，移到空格后松开';
+  gestureState.textContent = '抓住了！移向另一枚字形，靠近就会组合';
 }
 
 function moveActive(x, y) {
   pointer = { x, y };
-  if (!active) return;
-  active.style.left = `${x}px`;
-  active.style.top = `${y}px`;
+  if (!active || !arRuntime) return;
+  const rect = arRuntime.renderer.domElement.getBoundingClientRect();
+  const ndc = new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2);
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera(ndc, arRuntime.camera);
+  arRuntime.scene.updateMatrixWorld(true);
+  const normal = new THREE.Vector3(0, 0, 1).transformDirection(arRuntime.oasis.root.matrixWorld);
+  const point = arRuntime.oasis.root.localToWorld(new THREE.Vector3(0, 0, active.position.z));
+  const hit = new THREE.Vector3();
+  if (!ray.ray.intersectPlane(new THREE.Plane().setFromNormalAndCoplanarPoint(normal, point), hit)) return;
+  const local = arRuntime.oasis.root.worldToLocal(hit);
+  active.position.x = THREE.MathUtils.clamp(local.x, -0.62, 0.62);
+  active.position.y = THREE.MathUtils.clamp(local.y, -0.48, 0.49);
+  tryCombine();
 }
 
-function placeActiveInSlot(slot) {
-  if (!active || slot.classList.contains('filled')) return false;
-  const node = active;
-  if (slot.dataset.radical !== node.dataset.radical) {
-    gestureState.textContent = '这个格子不对，换另一个虚线格';
-    return false;
-  }
-  active = null;
-  node.classList.remove('held');
-  slot.textContent = node.dataset.radical;
-  slot.classList.add('filled');
-  node.classList.add('used');
-  gestureState.textContent = '很好！继续找下一个偏旁';
-  if (document.querySelectorAll('.slot.filled').length === currentLevel().radicals.length) {
-    const level = currentLevel();
-    setSceneCaption(sceneMessage(level, true));
-    arView.classList.add('scene-bloom');
+function tryCombine() {
+  if (!active || completing) return;
+  const here = screenPosition(active);
+  if (!here) return;
+  const radius = Math.max(65, Math.min(108, innerWidth * 0.12));
+  const nearby = radialNodes
+    .filter((node) => node !== active && node.visible)
+    .map((node) => ({ node, point: screenPosition(node) }))
+    .filter(({ point }) => point && Math.hypot(here.x - point.x, here.y - point.y) < radius)
+    .sort((a, b) => Math.hypot(here.x - a.point.x, here.y - a.point.y) - Math.hypot(here.x - b.point.x, here.y - b.point.y))[0]?.node;
+  if (!nearby) { combineCandidate = null; return; }
+  if (nearby !== combineCandidate) { combineCandidate = nearby; combineStartedAt = performance.now(); return; }
+  if (performance.now() - combineStartedAt < 110) return;
+  combineCandidate = null;
+  active.userData.parts.push(...nearby.userData.parts);
+  nearby.visible = false;
+  const level = currentLevel();
+  const glyph = currentGlyph();
+  if (active.userData.parts.length === glyph.radicals.length) {
+    completing = true;
+    active.position.set(0, 0.06, 0.48);
+    active.scale.set(0.36, 0.36, 1);
+    changeGlyph(active, glyph.char);
+    const wordFinished = !level.glyphs || glyphIndex === level.glyphs.length - 1;
+    setSceneCaption(wordFinished ? `「${level.word}」· ${level.pinyin} · 绿洲被唤醒` : `「${glyph.char}」已成 · 继续组「${level.glyphs[glyphIndex + 1].char}」`);
+    gestureState.textContent = wordFinished ? `组出了「${level.word}」！看看场景的变化` : `第一个字「${glyph.char}」完成，准备下一个字`;
+    if (wordFinished) arRuntime.oasis.bloom(level.word);
     playChime();
-    gestureState.textContent = `「${level.word}」完成！绿洲正在变化…`;
-    setTimeout(() => {
-      arView.classList.remove('scene-bloom');
-      advanceLevel();
-    }, 1400);
+    active = null;
+    completionTimeout = window.setTimeout(advanceLevel, wordFinished ? 2100 : 1300);
+  } else {
+    const joined = active.userData.parts.sort((a, b) => a - b).map((index) => glyph.radicals[index]).join('·');
+    changeGlyph(active, joined);
+    active.scale.set(0.24, 0.24, 1);
+    gestureState.textContent = `已融合 ${active.userData.parts.length}/${glyph.radicals.length} 个部件，继续寻找`;
+    playChime();
   }
-  return true;
 }
 
 function release() {
   if (!active) return;
-  const node = active;
-  const matchingSlot = [...document.querySelectorAll('.slot:not(.filled)')]
-    .find((slot) => slot.dataset.radical === node.dataset.radical);
-  const slotsRect = slots.getBoundingClientRect();
-  const inAnswerZone = pointer.y >= slotsRect.top - 35;
-  if (matchingSlot && inAnswerZone && placeActiveInSlot(matchingSlot)) {
-    return;
-  } else {
-    active = null;
-    gestureState.textContent = '捏合偏旁后，把手移到下方虚线格再松开';
-    const index = radialNodes.indexOf(node);
-    const origin = positionForPlayingHand(currentLevel().positions[index]);
-    node.style.left = `${origin[0]}%`;
-    node.style.top = `${origin[1]}%`;
-  }
+  active.scale.setScalar(active.userData.parts.length > 1 ? 0.24 : 0.19);
+  active = null;
+  combineCandidate = null;
+  gestureState.textContent = '字形留在原处；再次捏住，靠近另一枚字形即可组合';
 }
 
 function advanceLevel() {
+  const finishedLevel = currentLevel();
+  if (finishedLevel?.glyphs && glyphIndex < finishedLevel.glyphs.length - 1) {
+    glyphIndex += 1;
+    createLevel();
+    return;
+  }
+  glyphIndex = 0;
   levelIndex += 1;
   if (levelIndex >= levels.length) {
     stopGame();
     completeHeading.textContent = '六境绿洲完成';
-    completeText.textContent = '你完成了 18 个随机草字头组字挑战。';
+    completeText.textContent = '你在立体绿洲里完成了 18 个组字挑战。';
     complete.hidden = false;
     return;
   }
   createLevel();
   const level = currentLevel();
-  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '绿洲已唤醒') + ` · ${realmTitle(level)} 第 ${level.stageIndex}/3 字：捏合部件来组字`);
+  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '绿洲已唤醒') + ` · ${realmTitle(level)} 第 ${level.stageIndex}/3 词`);
 }
 
 async function setupHandTracking(video) {
@@ -392,10 +486,12 @@ function updateHand(result) {
   const hand = selectPlayingHand(result);
   if (!hand) {
     cursor.style.opacity = '0';
-    if (active?.dataset.handGrab === 'true' && performance.now() - lastHandSeenAt > HAND_LOSS_GRACE_MS) {
+    cursor.classList.remove('near');
+    if (hoveredNode && hoveredNode !== active && hoveredNode.visible) hoveredNode.scale.setScalar(0.19);
+    hoveredNode = null;
+    if (active && performance.now() - lastHandSeenAt > HAND_LOSS_GRACE_MS) {
       pinchHeld = false;
       pinchReleaseStartedAt = 0;
-      delete active.dataset.handGrab;
       release();
     }
     if (handDetectionState !== 'missing' || performance.now() - lastHandStatusAt > 1800) {
@@ -409,8 +505,13 @@ function updateHand(result) {
   const thumb = hand[4];
   const video = document.querySelector('#cameraContainer video');
   const videoRect = video?.getBoundingClientRect();
-  const x = (videoRect?.left || 0) + tip.x * (videoRect?.width || innerWidth);
-  const y = (videoRect?.top || 0) + tip.y * (videoRect?.height || innerHeight);
+  const scale = video && videoRect ? Math.max(videoRect.width / video.videoWidth, videoRect.height / video.videoHeight) : 1;
+  const imageWidth = video ? video.videoWidth * scale : innerWidth;
+  const imageHeight = video ? video.videoHeight * scale : innerHeight;
+  const imageLeft = (videoRect?.left || 0) + ((videoRect?.width || innerWidth) - imageWidth) / 2;
+  const imageTop = (videoRect?.top || 0) + ((videoRect?.height || innerHeight) - imageHeight) / 2;
+  const x = imageLeft + ((tip.x + thumb.x) / 2) * imageWidth;
+  const y = imageTop + ((tip.y + thumb.y) / 2) * imageHeight;
   const distance = Math.hypot(tip.x - thumb.x, tip.y - thumb.y);
   const palmSize = Math.max(0.045, Math.hypot(hand[0].x - hand[9].x, hand[0].y - hand[9].y));
   const pinchRatio = distance / palmSize;
@@ -430,34 +531,40 @@ function updateHand(result) {
   cursor.style.left = `${x}px`;
   cursor.style.top = `${y}px`;
   cursor.classList.toggle('pinching', pinchHeld);
-  if (handDetectionState !== 'seen' && !active) {
+  const pickupRadius = Math.max(74, Math.min(125, innerWidth * 0.14));
+  const nearest = radialNodes
+    .filter((node) => node.visible && node !== active)
+    .map((node) => {
+      const point = screenPosition(node);
+      return { node, distance: point ? Math.hypot(x - point.x, y - point.y) : Infinity };
+    })
+    .sort((a, b) => a.distance - b.distance)[0];
+  const nearNode = nearest?.distance < pickupRadius ? nearest.node : null;
+  if (hoveredNode && hoveredNode !== nearNode && hoveredNode !== active && hoveredNode.visible) hoveredNode.scale.setScalar(0.19);
+  hoveredNode = nearNode;
+  if (nearNode) nearNode.scale.setScalar(0.23);
+  cursor.classList.toggle('near', !!nearNode);
+  if (handDetectionState !== 'seen' && !active && !completing) {
     handDetectionState = 'seen';
-    gestureState.textContent = '已识别到手！手心或手背都可，食指和拇指合拢约 1 秒即可抓住';
+    gestureState.textContent = '已看到手。拇指与食指捏住字形，移近另一枚字形';
   }
   moveActive(x, y);
-  if (pinchHeld && !active) {
-    const nearby = radialNodes
-      .filter((node) => !node.classList.contains('used'))
-      .map((node) => {
-        const rect = node.getBoundingClientRect();
-        return { node, distance: Math.hypot(x - (rect.left + rect.width / 2), y - (rect.top + rect.height / 2)) };
-      })
-      .sort((a, b) => a.distance - b.distance)[0];
-    if (nearby && nearby.distance < PICKUP_RADIUS_PX) {
-      grab(nearby.node, x, y);
-      nearby.node.dataset.handGrab = 'true';
-      gestureState.textContent = '捏合已抓住偏旁';
-    }
+  if (pinchHeld && !active && !completing) {
+    if (nearNode) grab(nearNode, x, y);
+    else revealNearbyEgg(x, y);
   }
-  if (!pinchHeld && active?.dataset.handGrab === 'true') {
-    delete active.dataset.handGrab;
-    release();
-  }
+  if (!pinchHeld && active) release();
 }
 
 async function startAR() {
   startButton.disabled = true;
   retryCamera.hidden = true;
+  window.clearTimeout(completionTimeout);
+  arRuntime?.renderer.setAnimationLoop(null);
+  arRuntime?.renderer.dispose();
+  arRuntime = null;
+  radialNodes = [];
+  active = null;
   practiceMode = false;
   scanConfirmed = false;
   foundTarget = false;
@@ -484,10 +591,24 @@ async function startAR() {
       webcamConfig: { facingMode: 'environment' },
       filterMinCF: 0.001,
       filterBeta: 0.01,
+      warmupTolerance: 5,
+      missTolerance: 18,
     });
     const { renderer, scene, camera } = mindar;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    scene.add(camera);
+    const oasis = createOasis(THREE);
     const anchor = mindar.addAnchor(0);
+    anchor.group.add(oasis.root);
+    arRuntime = { scene, camera, renderer, oasis, anchor, mode: 'marker' };
     anchor.onTargetFound = () => {
+      if (oasis.root.parent !== anchor.group) {
+        oasis.root.parent?.remove(oasis.root);
+        anchor.group.add(oasis.root);
+        oasis.root.position.set(0, 0, 0);
+        oasis.root.rotation.set(0, 0, 0);
+        oasis.root.scale.setScalar(1);
+      }
       foundTarget = true;
       const isFirstScan = !scanConfirmed;
       scanConfirmed = true;
@@ -495,8 +616,8 @@ async function startAR() {
       arView.classList.remove('story-mode');
       if (isFirstScan) {
         createLevel();
-        setStatus('图卡已识别：绿洲已在现实画面中浮现，偏旁藏在场景里');
-        gestureState.textContent = '图卡已唤醒。手心或手背都可；整只抓取手入镜，拇指和食指合拢约 1 秒';
+        setStatus('图卡已识别：立体绿洲浮现。捏住一枚字形，移近另一枚');
+        gestureState.textContent = '手心或手背均可；让整只抓取手出现在镜头里';
       } else {
         setStatus('图卡重新校准完成：继续在绿洲中抓取偏旁');
       }
@@ -505,21 +626,35 @@ async function startAR() {
       foundTarget = false;
       arView.classList.remove('found');
       if (scanConfirmed) {
-        // Image tracking needs the card in view to stay spatially anchored.
-        // Keep the story scene alive after a scan, but state this honestly.
+        // MindAR loses the marker pose here. Reparenting to the camera keeps
+        // the 3D story visible while honestly labeling it as floating mode.
+        oasis.root.parent?.remove(oasis.root);
+        camera.add(oasis.root);
+        oasis.root.position.set(0, -0.03, -1.25);
+        oasis.root.rotation.set(0, 0, 0);
+        oasis.root.scale.setScalar(0.50);
         arView.classList.add('story-mode');
         setStatus('绿洲已唤醒：图卡离开后进入漂浮场景；需要定位时请再扫一次图卡');
       } else {
         setStatus('请将吐鲁番图卡完整放进镜头');
       }
     };
-    const markerLight = new THREE.HemisphereLight(0xffffff, 0x22113c, 1.4);
+    const markerLight = new THREE.HemisphereLight(0xf9f0dc, 0x335d61, 2.0);
     scene.add(markerLight);
+    const sunlight = new THREE.DirectionalLight(0xffdfb0, 1.6);
+    sunlight.position.set(-0.7, 1.2, 1.5);
+    scene.add(sunlight);
     await mindar.start();
-    renderer.setAnimationLoop(() => renderer.render(scene, camera));
+    renderer.setAnimationLoop((time) => {
+      oasis.update(time);
+      renderer.render(scene, camera);
+    });
     setStatus('请将吐鲁番图卡完整放进镜头；识别成功后才会出现偏旁');
     await setupHandTracking(mindar.video);
   } catch (error) {
+    arRuntime?.renderer.setAnimationLoop(null);
+    arRuntime?.renderer.dispose();
+    arRuntime = null;
     releaseMindARCamera();
     showCameraError(error, true);
     practiceButton.hidden = false;
@@ -537,6 +672,12 @@ function shouldAutoStart() {
 
 async function startPractice() {
   practiceButton.disabled = true;
+  window.clearTimeout(completionTimeout);
+  arRuntime?.renderer.setAnimationLoop(null);
+  arRuntime?.renderer.dispose();
+  arRuntime = null;
+  radialNodes = [];
+  active = null;
   welcome.hidden = true;
   arView.style.display = 'block';
   foundTarget = false;
@@ -551,8 +692,16 @@ async function startPractice() {
 }
 
 function stopGame() {
+  window.clearTimeout(completionTimeout);
   cancelAnimationFrame(animationFrame);
   animationFrame = 0;
+  arRuntime?.renderer.setAnimationLoop(null);
+  arRuntime?.renderer.dispose();
+  arRuntime = null;
+  radialNodes = [];
+  active = null;
+  hoveredNode = null;
+  completing = false;
   handLandmarker?.close?.();
   handLandmarker = null;
   pinchHeld = false;
@@ -575,15 +724,16 @@ function stopGame() {
 startButton.addEventListener('click', startAR);
 practiceButton.addEventListener('click', startPractice);
 exitButton.addEventListener('click', () => { stopGame(); welcome.hidden = false; });
-againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; levels = createCampaign(); welcome.hidden = false; });
+againButton.addEventListener('click', () => { complete.hidden = true; levelIndex = 0; glyphIndex = 0; levels = createCampaign(); welcome.hidden = false; });
 retryCamera.addEventListener('click', startAR);
 handModeButton.addEventListener('click', () => {
   playingHand = playingHand === 'right' ? 'left' : 'right';
   localStorage.setItem('hanzi-playing-hand', playingHand);
   refreshHandModeLabel();
   if (arView.style.display === 'block') {
+    window.clearTimeout(completionTimeout);
     if (scanConfirmed) createLevel();
-    gestureState.textContent = '已切换手势方向，保持整只抓取手在中下方入镜';
+    gestureState.textContent = '已切换抓取手；让整只手自然进入镜头';
   }
 });
 refreshHandModeLabel();
