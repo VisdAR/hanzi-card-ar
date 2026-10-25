@@ -35,12 +35,13 @@ const routes = [
 ];
 
 const labels = {
-  target: { zh: '第 {index}/3 字 · 靠近并对准发光的偏旁；捏住或点“抓取”', fr: 'Caractère {index}/3. Visez une forme lumineuse. Pincez pour la saisir ou touchez « Saisir ».', en: 'Character {index}/3. Aim at a glowing piece. Pinch to grab it or tap Grab.' },
+  target: { zh: '第 {index}/3 字。靠近并对准发光的偏旁；捏住或点“抓取”', fr: 'Caractère {index}/3. Visez une forme lumineuse. Pincez pour la saisir ou touchez « Saisir ».', en: 'Character {index}/3. Aim at a glowing piece. Pinch to grab it or tap Grab.' },
   hold: { zh: '已抓住：移向另一枚偏旁，靠近后自动融合', fr: 'Pièce saisie : rapprochez-la d’une autre pour les assembler.', en: 'Piece held: bring it close to another piece to join them.' },
-  progress: { zh: '已组合 {parts}/{total} 个部件 · 还剩 {remaining} 个字', fr: '{parts}/{total} éléments assemblés · {remaining} caractères à découvrir', en: '{parts}/{total} pieces joined · {remaining} characters left' },
-  done: { zh: '「{word}」组成了 · 本境还剩 {remaining} 个字', fr: '« {word} » est formé · encore {remaining} caractères dans ce monde', en: '“{word}” is complete · {remaining} characters remain in this realm' },
-  allDone: { zh: '本境的三个字都完成了 · 可选择下一境', fr: 'Les trois caractères sont terminés. Choisissez le monde suivant.', en: 'All three characters are complete. Choose the next realm.' },
-  grab: { zh: '抓取 / 放下', fr: 'Saisir / poser', en: 'Grab / release' },
+  progress: { zh: '已组合 {parts}/{total} 个部件，还剩 {remaining} 个字', fr: '{parts}/{total} éléments assemblés ; {remaining} caractères à découvrir', en: '{parts}/{total} pieces joined; {remaining} characters left' },
+  done: { zh: '「{word}」组成了，本境还剩 {remaining} 个字', fr: '« {word} » est formé ; encore {remaining} caractères dans ce monde', en: '“{word}” is complete; {remaining} characters remain in this realm' },
+  allDone: { zh: '本境的三个字都完成了，可选择下一境', fr: 'Les trois caractères sont terminés. Choisissez le monde suivant.', en: 'All three characters are complete. Choose the next realm.' },
+  grab: { zh: '抓取', fr: 'Saisir', en: 'Grab' },
+  release: { zh: '放下', fr: 'Déposer', en: 'Release' },
   next: { zh: '寻找下一个字', fr: 'Caractère suivant', en: 'Next character' },
   near: { zh: '字形离镜头较远；原地转身，把镜头对准它', fr: 'La forme est plus loin. Tournez sur place pour la viser.', en: 'The piece is farther away. Turn in place to aim at it.' },
 };
@@ -113,6 +114,7 @@ export function createSpatialGame(THREE, { world, getCamera, ui, getMode, getLan
     if (wordIndex >= 3) {
       say(labels.allDone);
       ui.grab.hidden = true;
+      ui.release.hidden = true;
       return;
     }
     const word = playRoutes[realm - 1][wordIndex];
@@ -129,7 +131,9 @@ export function createSpatialGame(THREE, { world, getCamera, ui, getMode, getLan
       nodes.push(glyph);
     });
     ui.grab.hidden = false;
+    ui.release.hidden = false;
     pair(ui.grab, labels.grab);
+    pair(ui.release, labels.release);
     pair(ui.next, labels.next);
     say(labels.target, { index: wordIndex + 1 });
   }
@@ -142,6 +146,7 @@ export function createSpatialGame(THREE, { world, getCamera, ui, getMode, getLan
 
   function refreshLanguage() {
     pair(ui.grab, labels.grab);
+    pair(ui.release, labels.release);
     pair(ui.next, labels.next);
     if (completed) showExplanation();
     else if (active) say(labels.hold);
@@ -200,7 +205,7 @@ export function createSpatialGame(THREE, { world, getCamera, ui, getMode, getLan
 
   function showExplanation() {
     const [word, pinyin, parts, zh, fr, en] = playRoutes[realm - 1][wordIndex];
-    pair(ui.explainer, { zh: `${word} · ${pinyin}。${zh}`, fr, en });
+    pair(ui.explainer, { zh: `${word}（${pinyin}）。${zh}`, fr, en });
     ui.explainer.hidden = false;
     ui.narration.hidden = true;
     say(remaining() ? labels.done : labels.allDone, { word, remaining: remaining() });
@@ -219,10 +224,11 @@ export function createSpatialGame(THREE, { world, getCamera, ui, getMode, getLan
       active.userData.baseScale = 0.47;
       active = null;
       ui.grab.hidden = true;
+      ui.release.hidden = true;
       ui.next.hidden = false;
       showExplanation();
     } else {
-      const text = active.userData.parts.sort((a, b) => a - b).map((i) => word[2][i]).join('·');
+      const text = active.userData.parts.sort((a, b) => a - b).map((i) => word[2][i]).join('、');
       changeGlyph(active, text);
       say(labels.progress, { parts: active.userData.parts.length, total: word[2].length, remaining: remaining() });
     }
@@ -244,7 +250,8 @@ export function createSpatialGame(THREE, { world, getCamera, ui, getMode, getLan
     const x = cursor?.x ?? innerWidth / 2;
     const y = cursor?.y ?? innerHeight / 2;
     nearby = findNear(x, y);
-    ui.grab.disabled = !active && !nearby;
+    ui.grab.disabled = !!active || !nearby;
+    ui.release.disabled = !active;
     for (const node of nodes) {
       if (!node.visible || node === active || completed) continue;
       const scale = node === nearby ? node.userData.baseScale * 1.18 : node.userData.baseScale;
@@ -336,7 +343,8 @@ export function createSpatialGame(THREE, { world, getCamera, ui, getMode, getLan
     release();
   }
 
-  ui.grab.addEventListener('click', grabOrRelease);
+  ui.grab.addEventListener('click', () => pick(nearby));
+  ui.release.addEventListener('click', release);
   ui.next.addEventListener('click', () => { if (!completed) return; wordIndex += 1; progress[realm - 1] = wordIndex; setWord(); });
   return { selectRealm, refreshLanguage, update, startHands, stopHands, tap, grabOrRelease };
 }

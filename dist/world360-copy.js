@@ -1,6 +1,6 @@
 export const copy = {
   back: {
-    zh: '返回组字', fr: 'Retour au jeu', en: 'Back to game',
+    zh: '主菜单', fr: 'Menu principal', en: 'Main menu',
   },
   gateTitle: {
     zh: '让绿洲在身边展开', fr: 'L’oasis prend vie autour de vous', en: 'Let the oasis unfold around you',
@@ -22,7 +22,7 @@ export const copy = {
     zh: '原地环视（不定位地面）', fr: 'Explorer sur place (sans ancrage au sol)', en: 'Look around in place (no floor anchor)',
   },
   safety: {
-    zh: '只在平坦空旷处原地转身 · 随时抬头看路',
+    zh: '只在平坦空旷处原地转身，随时抬头看路',
     fr: 'Restez sur place, sur un sol plat. Regardez autour de vous.',
     en: 'Stay in one place on level ground. Keep looking around you.',
   },
@@ -119,7 +119,7 @@ export const copy = {
     en: 'The camera could not start. Check its browser permission.',
   },
   preview: {
-    zh: '本地场景预览 · 不使用相机或地面定位',
+    zh: '本地场景预览，不使用相机或地面定位',
     fr: 'Aperçu local sans caméra ni ancrage au sol',
     en: 'Local preview without camera or floor tracking',
   },
@@ -137,19 +137,19 @@ export const copy = {
     en: 'Camera paused. Check your surroundings again before resuming.',
   },
   modeXR: {
-    zh: '设备平面定位 · 仍需肉眼避障',
-    fr: 'Ancrage au sol · surveillez les obstacles',
-    en: 'Floor anchor · watch for obstacles',
+    zh: '设备平面定位，仍需肉眼避障',
+    fr: 'Ancrage au sol : surveillez les obstacles',
+    en: 'Floor anchor: watch for obstacles',
   },
   modeCompass: {
-    zh: '原地环视 · 无地面定位',
-    fr: 'Visite sur place · sans ancrage au sol',
-    en: 'Look around · no floor anchor',
+    zh: '原地环视，无地面定位',
+    fr: 'Visite sur place, sans ancrage au sol',
+    en: 'Look around in place, without a floor anchor',
   },
   modePreview: {
-    zh: '本地预览 · 无地面定位',
-    fr: 'Aperçu local · sans ancrage au sol',
-    en: 'Local preview · no floor anchor',
+    zh: '本地预览，无地面定位',
+    fr: 'Aperçu local, sans ancrage au sol',
+    en: 'Local preview, without a floor anchor',
   },
   portalIntro: {
     zh: '进入下一步后，请先肉眼确认周围安全，再将镜头对准平坦地面。',
@@ -162,6 +162,15 @@ export const copy = {
     en: 'Open the 360° oasis',
   },
 };
+
+export const realmTitles = [
+  { fr: 'Ombres de vigne à l’aube', en: 'Vine Shadows at Dawn' },
+  { fr: 'Sentier des simples vers la source', en: 'Medicinal Herb Path to the Spring' },
+  { fr: 'Allée fleurie sous les treilles', en: 'Flowering Vine Arcade' },
+  { fr: 'Ancienne route par-delà les monts', en: 'Ancient Road Beyond the Mountains' },
+  { fr: 'Marché des récoltes au crépuscule', en: 'Harvest Market at Dusk' },
+  { fr: 'Nouvelle vie à la source étoilée', en: 'New Life at the Starlit Spring' },
+];
 
 export const realmNarration = [
   {

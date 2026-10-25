@@ -1,5 +1,5 @@
 import { createOasis, makeGlyphSprite, changeGlyph } from './oasis3d.js';
-import { copy, preferredLanguage, saveLanguage } from './world360-copy.js';
+import { copy, preferredLanguage, saveLanguage } from './world360-copy.js?v=5';
 
 // Each realm selects three word missions. 葡萄 and 萌芽 require two glyphs each.
 const hskWords = {
@@ -57,7 +57,7 @@ const realmNames = {
 };
 
 function realmTitle(level) {
-  return `第${level.hsk}境·${realmNames[level.hsk]}`;
+  return `第${level.hsk}境，${realmNames[level.hsk]}`;
 }
 
 function shuffled(words) {
@@ -113,12 +113,14 @@ const completeText = document.querySelector('#complete p:not(.eyebrow)');
 const sceneCaption = document.querySelector('#sceneCaption');
 const worldPortal = document.querySelector('#worldPortal');
 const enterWorld = document.querySelector('#enterWorld');
-const portalLanguage = document.querySelector('#portalLanguage');
+const portalFrench = document.querySelector('#portalFrench');
+const portalEnglish = document.querySelector('#portalEnglish');
 const portalIntro = document.querySelector('#portalIntro');
 let portalTranslation = preferredLanguage();
 
 function refreshPortalLanguage() {
-  portalLanguage.textContent = portalTranslation === 'fr' ? 'FR / EN' : 'EN / FR';
+  portalFrench.setAttribute('aria-pressed', String(portalTranslation === 'fr'));
+  portalEnglish.setAttribute('aria-pressed', String(portalTranslation === 'en'));
   for (const [element, entry] of [[portalIntro, copy.portalIntro], [enterWorld, copy.portalButton]]) {
     element.querySelector('.foreign-copy').textContent = entry[portalTranslation];
     element.querySelector('.foreign-copy').lang = portalTranslation;
@@ -160,7 +162,7 @@ const PINCH_RELEASE_GRACE_MS = 380;
 const HAND_LOSS_GRACE_MS = 2400;
 
 function describeHandMode() {
-  return playingHand === 'right' ? '左手持机 · 右手抓取' : '右手持机 · 左手抓取';
+  return playingHand === 'right' ? '左手持机，右手抓取' : '右手持机，左手抓取';
 }
 
 function positionForPlayingHand(position) {
@@ -176,9 +178,9 @@ function setStatus(message) { status.textContent = message; }
 function setSceneCaption(message) { sceneCaption.textContent = message; }
 
 function sceneMessage(level, complete = false) {
-  if (complete) return `「${level.word}」已成 · 绿洲回应了你的文字`;
+  if (complete) return `「${level.word}」已成，绿洲回应了你的文字`;
   const glyph = currentGlyph();
-  return `${realmNames[level.hsk]} · 找到「${glyph.char}」的构字部件`;
+  return `${realmNames[level.hsk]}，找到「${glyph.char}」的构字部件`;
 }
 
 function playChime() {
@@ -256,7 +258,7 @@ async function startFallbackCamera() {
   arView.classList.add('practice', 'scanned', 'story-mode');
   createLevel();
   retryCamera.hidden = true;
-  setSceneCaption('试玩模式 · 立体绿洲随镜头移动');
+  setSceneCaption('试玩模式，立体绿洲随镜头移动');
   setStatus('试玩模式：把手伸入镜头，捏住字形并与另一枚相碰');
   await setupHandTracking(video);
 }
@@ -292,7 +294,7 @@ function createLevel() {
   const positions = positionsFor(glyph.radicals.length);
   arView.dataset.hsk = level.hsk;
   arRuntime.oasis.setRealm(level.hsk);
-  stageTitle.textContent = `${realmTitle(level)} · 第 ${level.stageIndex}/3 词 · 组「${level.word}」${level.glyphs ? `中的「${glyph.char}」` : ''}`;
+  stageTitle.textContent = `${realmTitle(level)}，第 ${level.stageIndex}/3 词，组「${level.word}」${level.glyphs ? `中的「${glyph.char}」` : ''}`;
   setSceneCaption(sceneMessage(level));
   glyph.radicals.forEach((radical, index) => {
     const position = positionForPlayingHand(positions[index]);
@@ -331,7 +333,7 @@ function revealNearbyEgg(x, y) {
   if (!egg || egg.distance > radius) return false;
   const discovery = arRuntime.oasis.revealEgg(egg.candidate);
   if (!discovery) return false;
-  setSceneCaption(`发现彩蛋 · ${discovery}`);
+  setSceneCaption(`发现彩蛋，${discovery}`);
   gestureState.textContent = '找到了隐藏彩蛋！继续把构字部件靠在一起';
   playChime();
   return true;
@@ -387,14 +389,14 @@ function tryCombine() {
     active.scale.set(0.36, 0.36, 1);
     changeGlyph(active, glyph.char);
     const wordFinished = !level.glyphs || glyphIndex === level.glyphs.length - 1;
-    setSceneCaption(wordFinished ? `「${level.word}」· ${level.pinyin} · 绿洲被唤醒` : `「${glyph.char}」已成 · 继续组「${level.glyphs[glyphIndex + 1].char}」`);
+    setSceneCaption(wordFinished ? `「${level.word}」（${level.pinyin}），绿洲被唤醒` : `「${glyph.char}」已成，继续组「${level.glyphs[glyphIndex + 1].char}」`);
     gestureState.textContent = wordFinished ? `组出了「${level.word}」！看看场景的变化` : `第一个字「${glyph.char}」完成，准备下一个字`;
     if (wordFinished) arRuntime.oasis.bloom(level.word);
     playChime();
     active = null;
     completionTimeout = window.setTimeout(advanceLevel, wordFinished ? 2100 : 1300);
   } else {
-    const joined = active.userData.parts.sort((a, b) => a - b).map((index) => glyph.radicals[index]).join('·');
+    const joined = active.userData.parts.sort((a, b) => a - b).map((index) => glyph.radicals[index]).join('、');
     changeGlyph(active, joined);
     active.scale.set(0.24, 0.24, 1);
     gestureState.textContent = `已融合 ${active.userData.parts.length}/${glyph.radicals.length} 个部件，继续寻找`;
@@ -428,7 +430,7 @@ function advanceLevel() {
   }
   createLevel();
   const level = currentLevel();
-  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '请重新对准图卡') + ` · ${realmTitle(level)} 第 ${level.stageIndex}/3 词`);
+  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '请重新对准图卡') + `，${realmTitle(level)} 第 ${level.stageIndex}/3 词`);
 }
 
 async function setupHandTracking(video) {
@@ -743,13 +745,15 @@ enterWorld.addEventListener('click', () => {
   if (!scanConfirmed) return;
   sessionStorage.setItem('hanzi-world-scan', String(Date.now()));
   stopGame();
-  window.location.assign('./world360.html?v=4');
+  window.location.assign('./world360.html?v=5');
 });
-portalLanguage.addEventListener('click', () => {
-  portalTranslation = portalTranslation === 'fr' ? 'en' : 'fr';
-  saveLanguage(portalTranslation);
-  refreshPortalLanguage();
-});
+for (const [button, choice] of [[portalFrench, 'fr'], [portalEnglish, 'en']]) {
+  button.addEventListener('click', () => {
+    portalTranslation = choice;
+    saveLanguage(portalTranslation);
+    refreshPortalLanguage();
+  });
+}
 refreshPortalLanguage();
 handModeButton.addEventListener('click', () => {
   playingHand = playingHand === 'right' ? 'left' : 'right';

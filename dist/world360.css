@@ -9,10 +9,15 @@ button { border: 0; cursor: pointer; }
 #cameraFeed { object-fit: cover; display: none; }
 #sceneLayer { pointer-events: none; }
 #voxelReveal { pointer-events: none; z-index: 6; }
-.topbar { position: fixed; z-index: 8; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: start; gap: 12px; padding: max(16px, env(safe-area-inset-top)) 17px 12px; background: linear-gradient(#071b26cf, transparent); }
-.topbar > div:first-child { display: grid; gap: 2px; min-width: 0; }
-.topbar-actions { display: flex; gap: 6px; align-items: center; }
-.topbar-actions button { color: #fff5d8; background: #102d35dc; border: 1px solid #ead9ad9c; border-radius: 999px; padding: 9px 10px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.topbar { position: fixed; z-index: 8; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: start; gap: 8px; padding: max(16px, env(safe-area-inset-top)) 13px 12px; background: linear-gradient(#071b26e8, transparent); }
+.realm-heading { display: flex; align-items: start; gap: 8px; min-width: 0; flex: 1; }
+.realm-index { display: grid; place-items: center; width: 35px; height: 35px; flex: 0 0 35px; border: 1px solid #e7d7ad; border-radius: 10px; color: #12343b; background: #ead4a8; box-shadow: 0 3px 0 #987c53; font: 700 22px/1 "STKaiti", "Kaiti SC", serif; }
+.realm-text { display: grid; min-width: 0; gap: 2px; }
+.realm-translation { color: #f0d9a5; font: 600 11px/1.25 system-ui, sans-serif; text-wrap: balance; }
+.topbar-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+.language-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid #e4edd48c; border-radius: 999px; background: #102d35d9; }
+.language-switch button { min-width: 30px; padding: 6px 5px; border-radius: 999px; color: #e9ecdd; background: transparent; font: 800 11px/1 system-ui, sans-serif; }
+.language-switch button[aria-pressed="true"] { color: #16383c; background: #d7e8cf; }
 .eyebrow { color: #b9dfcd; font-size: 11px; letter-spacing: .1em; }
 .topbar strong { font-family: "STKaiti", "Kaiti SC", serif; font-size: 24px; font-weight: 500; letter-spacing: .1em; }
 .topbar a { display: inline-grid; place-items: center; padding: 9px 12px; border: 1px solid #e4edd48c; border-radius: 999px; color: #eff7e8; text-decoration: none; background: #102d35d9; font-size: 12px; white-space: nowrap; }
@@ -66,3 +71,4 @@ button { border: 0; cursor: pointer; }
 .floor-reticle i:nth-child(2) { right: 0; top: 0; border-width: 3px 3px 0 0; }
 .floor-reticle i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 3px 3px; }
 .floor-reticle i:nth-child(4) { right: 0; bottom: 0; border-width: 0 3px 3px 0; }
+@media (max-width: 440px) { .topbar { flex-wrap: wrap; } .topbar-actions { margin-left: 43px; } .topbar a { padding: 7px 10px; } .status-line { top: max(126px, calc(env(safe-area-inset-top) + 112px)); } .interaction-panel { top: max(180px, calc(env(safe-area-inset-top) + 164px)); } }

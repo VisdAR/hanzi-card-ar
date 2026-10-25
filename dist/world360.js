@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { copy, realmNarration, preferredLanguage, saveLanguage } from './world360-copy.js';
-import { createSpatialGame } from './world360-game.js';
+import { copy, realmNarration, realmTitles, preferredLanguage, saveLanguage } from './world360-copy.js?v=5';
+import { createSpatialGame } from './world360-game.js?v=5';
 
 const scanAt = Number(sessionStorage.getItem('hanzi-world-scan') || 0);
 const localPreview = ['localhost', '127.0.0.1'].includes(location.hostname) &&
@@ -22,8 +22,11 @@ const ui = {
   badge: document.querySelector('#modeBadge'),
   safety: document.querySelector('#safetyBadge'),
   realmName: document.querySelector('#realmName'),
+  realmIndex: document.querySelector('#realmIndex'),
+  realmTranslation: document.querySelector('#realmTranslation'),
   realmNav: document.querySelector('#realmNav'),
-  languageToggle: document.querySelector('#languageToggle'),
+  languageFr: document.querySelector('#languageFr'),
+  languageEn: document.querySelector('#languageEn'),
   gateTitle: document.querySelector('#gateTitle'),
   gateIntro: document.querySelector('#gateIntro'),
   gateWarning: document.querySelector('#gateWarning'),
@@ -33,6 +36,7 @@ const ui = {
   hint: document.querySelector('#gameHint'),
   explainer: document.querySelector('#gameExplainer'),
   grab: document.querySelector('#grabButton'),
+  release: document.querySelector('#releaseButton'),
   next: document.querySelector('#nextWord'),
   gameReticle: document.querySelector('#gameReticle'),
   handPointer: document.querySelector('#handPointer'),
@@ -55,9 +59,12 @@ function pair(element, entry) {
 
 function refreshLanguage() {
   document.documentElement.lang = 'zh-CN';
-  ui.languageToggle.textContent = language === 'fr' ? 'FR / EN' : 'EN / FR';
-  ui.languageToggle.setAttribute('aria-label', language === 'fr' ? 'English translation' : 'Traduction française');
+  ui.languageFr.setAttribute('aria-pressed', String(language === 'fr'));
+  ui.languageEn.setAttribute('aria-pressed', String(language === 'en'));
+  ui.realmTranslation.textContent = realmTitles[realm - 1][language];
+  ui.realmTranslation.lang = language;
   ui.backLink.textContent = copy.back[language];
+  ui.backLink.setAttribute('aria-label', copy.back[language]);
   pair(ui.gateTitle, copy.gateTitle);
   pair(ui.gateIntro, copy.gateIntro);
   pair(ui.gateWarning, copy.gateWarning);
@@ -267,6 +274,9 @@ function setFade(value) {
 async function selectRealm(number) {
   realm = number;
   ui.realmName.textContent = manifest.realms[number - 1].name;
+  ui.realmIndex.textContent = ['一', '二', '三', '四', '五', '六'][number - 1];
+  ui.realmTranslation.textContent = realmTitles[number - 1][language];
+  ui.realmTranslation.lang = language;
   pair(ui.narration, realmNarration[number - 1]);
   for (const button of ui.realmNav.querySelectorAll('button')) {
     button.setAttribute('aria-current', button.dataset.realm === String(number) ? 'true' : 'false');
@@ -585,7 +595,9 @@ async function bootstrap() {
 
 ui.floorButton.addEventListener('click', startFloor);
 ui.compassButton.addEventListener('click', startCompass);
-ui.languageToggle.addEventListener('click', () => { language = language === 'fr' ? 'en' : 'fr'; saveLanguage(language); refreshLanguage(); });
+for (const [button, choice] of [[ui.languageFr, 'fr'], [ui.languageEn, 'en']]) {
+  button.addEventListener('click', () => { language = choice; saveLanguage(language); refreshLanguage(); });
+}
 window.addEventListener('resize', resize);
 window.addEventListener('pointerdown', pointerDown);
 window.addEventListener('pointermove', pointerMove);

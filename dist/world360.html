@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#123744" />
-    <title>立体绿洲 · 汉字图卡</title>
+    <title>立体绿洲，汉字图卡</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
-    <link rel="stylesheet" href="./world360.css?v=2" />
+    <link rel="stylesheet" href="./world360.css?v=3" />
     <script type="importmap">
       { "imports": { "three": "./vendor/three.module.js" } }
     </script>
@@ -17,8 +17,8 @@
     <canvas id="voxelReveal" aria-hidden="true"></canvas>
 
     <header class="topbar">
-      <div><span class="eyebrow">汉字图卡 · 立体绿洲</span><strong id="realmName">初醒藤影</strong></div>
-      <div class="topbar-actions"><button id="languageToggle" type="button">FR / EN</button><a id="backLink" href="./index.html?play=1" aria-label="返回图卡游戏">返回组字</a></div>
+      <div class="realm-heading"><span id="realmIndex" class="realm-index">一</span><div class="realm-text"><strong id="realmName">初醒藤影</strong><span id="realmTranslation" class="realm-translation" lang="fr">Ombres de vigne à l’aube</span></div></div>
+      <div class="topbar-actions"><div class="language-switch" role="group" aria-label="解说语言"><button id="languageFr" type="button" aria-pressed="true">FR</button><button id="languageEn" type="button" aria-pressed="false">EN</button></div><a id="backLink" href="./index.html" aria-label="主菜单">Menu principal</a></div>
     </header>
 
     <div id="floorReticle" class="floor-reticle" hidden aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -41,10 +41,10 @@
     <div id="handPointer" class="hand-pointer" hidden aria-hidden="true"></div>
     <section id="interactionPanel" class="interaction-panel" hidden aria-live="polite">
       <div id="gameHint" class="game-hint"><span class="foreign-copy"></span><span class="zh-copy"></span></div>
-      <div class="game-actions"><button id="grabButton" type="button" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></button><button id="nextWord" type="button" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></button></div>
+      <div class="game-actions"><button id="grabButton" type="button" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></button><button id="releaseButton" type="button" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></button><button id="nextWord" type="button" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></button></div>
     </section>
     <div id="gameExplainer" class="game-explainer" hidden><span class="foreign-copy"></span><span class="zh-copy"></span></div>
     <nav id="realmNav" class="realm-nav" aria-label="预览六境" hidden></nav>
-    <script type="module" src="./world360.js?v=4"></script>
+    <script type="module" src="./world360.js?v=5"></script>
   </body>
 </html>
