@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "setting": "原创的吐鲁番地貌启发型虚构绿洲，非真实景点复刻",
+  "panorama": {
+    "projection": "equirectangular",
+    "day": "panorama/day.webp",
+    "night": "panorama/night.webp",
+    "edgeBlendFraction": 0.04,
+    "seamYawDegrees": 180,
+    "orientationOnly": true
+  },
+  "props": [
+    { "id": "mountains", "file": "mountains.webp", "use": "image-target-far-depth" },
+    { "id": "village", "file": "village.webp", "yawDegrees": 8, "visibleFromRealm": 1 },
+    { "id": "grapes", "file": "grapes.webp", "yawDegrees": -42, "visibleFromRealm": 1 },
+    { "id": "canal", "file": "canal.webp", "yawDegrees": -8, "visibleFromRealm": 1 },
+    { "id": "herbStation", "file": "herb-station.webp", "yawDegrees": 38, "visibleFromRealm": 2 },
+    { "id": "flowerTrellis", "file": "flower-trellis.webp", "yawDegrees": -66, "visibleFromRealm": 3 },
+    { "id": "redPass", "file": "red-pass.webp", "yawDegrees": 104, "visibleFromRealm": 4 },
+    { "id": "harvest", "file": "harvest.webp", "yawDegrees": -114, "visibleFromRealm": 5 },
+    { "id": "sprout", "file": "sprout.webp", "yawDegrees": -26, "visibleFromRealm": 6 }
+  ],
+  "realms": [
+    { "number": 1, "name": "初醒藤影", "sky": "day", "newProps": ["village", "grapes", "canal"], "tone": "雾蓝、葡萄绿、暖沙" },
+    { "number": 2, "name": "寻泉药径", "sky": "day", "newProps": ["herbStation"], "tone": "鼠尾草绿、绿松石、陶土" },
+    { "number": 3, "name": "繁花藤廊", "sky": "day", "newProps": ["flowerTrellis"], "tone": "深葡萄紫、天青、嫩绿" },
+    { "number": 4, "name": "越岭古道", "sky": "day", "newProps": ["redPass"], "tone": "赭石、深青、斜阳" },
+    { "number": 5, "name": "暮市丰年", "sky": "day", "newProps": ["harvest"], "tone": "黛绿、陶橙、紫金" },
+    { "number": 6, "name": "星泉新生", "sky": "night", "newProps": ["sprout"], "tone": "深蓝、月白、玉绿" }
+  ],
+  "loopingMotion": {
+    "grapeLeavesSeconds": [5, 7],
+    "grapeBunchesSeconds": [6, 9],
+    "waterHighlightsSeconds": [3, 5],
+    "cloudShadowSeconds": [20, 30],
+    "distantBirdIntervalSeconds": [30, 60],
+    "note": "近景小幅错相循环；山、房、土岸固定。不要旋转整张全景图或复制同一组房屋填满一圈。"
+  }
+}
