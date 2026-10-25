@@ -413,7 +413,7 @@ function advanceLevel() {
   }
   createLevel();
   const level = currentLevel();
-  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '绿洲已唤醒') + ` · ${realmTitle(level)} 第 ${level.stageIndex}/3 词`);
+  setStatus((practiceMode ? '试玩模式' : foundTarget ? '图卡正在追踪' : '请重新对准图卡') + ` · ${realmTitle(level)} 第 ${level.stageIndex}/3 词`);
 }
 
 async function setupHandTracking(video) {
@@ -483,6 +483,13 @@ function selectPlayingHand(result) {
 }
 
 function updateHand(result) {
+  // A hand cannot manipulate an image-anchored piece without a current marker
+  // pose. Do not keep moving invisible pieces after the card leaves the frame.
+  if (!practiceMode && !foundTarget) {
+    cursor.style.opacity = '0';
+    if (active) release();
+    return;
+  }
   const hand = selectPlayingHand(result);
   if (!hand) {
     cursor.style.opacity = '0';
@@ -589,10 +596,8 @@ async function startAR() {
       uiScanning: 'no',
       uiError: 'no',
       webcamConfig: { facingMode: 'environment' },
-      filterMinCF: 0.001,
-      filterBeta: 0.01,
       warmupTolerance: 5,
-      missTolerance: 18,
+      missTolerance: 8,
     });
     const { renderer, scene, camera } = mindar;
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -602,13 +607,6 @@ async function startAR() {
     anchor.group.add(oasis.root);
     arRuntime = { scene, camera, renderer, oasis, anchor, mode: 'marker' };
     anchor.onTargetFound = () => {
-      if (oasis.root.parent !== anchor.group) {
-        oasis.root.parent?.remove(oasis.root);
-        anchor.group.add(oasis.root);
-        oasis.root.position.set(0, 0, 0);
-        oasis.root.rotation.set(0, 0, 0);
-        oasis.root.scale.setScalar(1);
-      }
       foundTarget = true;
       const isFirstScan = !scanConfirmed;
       scanConfirmed = true;
@@ -624,17 +622,13 @@ async function startAR() {
     };
     anchor.onTargetLost = () => {
       foundTarget = false;
-      arView.classList.remove('found');
+      arView.classList.remove('found', 'scanned', 'story-mode');
+      cursor.style.opacity = '0';
+      pinchHeld = false;
+      pinchReleaseStartedAt = 0;
+      if (active) release();
       if (scanConfirmed) {
-        // MindAR loses the marker pose here. Reparenting to the camera keeps
-        // the 3D story visible while honestly labeling it as floating mode.
-        oasis.root.parent?.remove(oasis.root);
-        camera.add(oasis.root);
-        oasis.root.position.set(0, -0.03, -1.25);
-        oasis.root.rotation.set(0, 0, 0);
-        oasis.root.scale.setScalar(0.50);
-        arView.classList.add('story-mode');
-        setStatus('绿洲已唤醒：图卡离开后进入漂浮场景；需要定位时请再扫一次图卡');
+        setStatus('图卡离开镜头，场景已暂停；请重新对准图卡继续组字');
       } else {
         setStatus('请将吐鲁番图卡完整放进镜头');
       }
