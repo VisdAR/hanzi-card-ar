@@ -610,7 +610,7 @@ async function startAR() {
       openingWorld = true;
       sessionStorage.setItem('hanzi-world-scan', String(Date.now()));
       setStatus('图卡已识别，正在进入绿洲…');
-      window.location.replace('./world360.html?v=6');
+      window.location.replace('./world360.html?v=7');
     };
     anchor.onTargetLost = () => {
       if (!openingWorld) setStatus('请将吐鲁番图卡完整放进镜头');
